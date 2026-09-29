@@ -1,5 +1,5 @@
 {
-  "name": "forest",
+  "name": "@forest",
   "private": true,
   "workspaces": [
     "apps/*"
