@@ -1,0 +1,16 @@
+{
+  "name": "forest",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "bun run --parallel --filter '*' dev",
+    "knip": "knip"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.3",
+    "knip": "6.38.0",
+    "typescript": "7.0.2"
+  }
+}
