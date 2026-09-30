@@ -2,10 +2,12 @@
   "name": "@forest",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "infra/db"
   ],
   "scripts": {
     "dev": "bun run --parallel --filter '*' dev",
+    "postdev": "echo 'ENCULER'",
     "knip": "knip"
   },
   "devDependencies": {
