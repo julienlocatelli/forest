@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
+import { User } from './users/user.entity.js';
+
 const dbUsername = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
@@ -21,8 +23,9 @@ if (!dbUsername || !dbPassword || !dbName) {
       username: dbUsername,
       password: dbPassword,
       database: dbName,
-      entities: [],
-      synchronize: true,
+      entities: [User],
+      autoLoadEntities: true,
+      synchronize: process.env.NODE_ENV === 'dev',
     }),
   ],
   controllers: [AppController],
