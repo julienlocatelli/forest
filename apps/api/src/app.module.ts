@@ -5,6 +5,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
 import { User } from './users/user.entity.js';
+import { UsersModule } from './users/user.module.js';
 
 const dbUsername = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
@@ -16,6 +17,7 @@ if (!dbUsername || !dbPassword || !dbName) {
 
 @Module({
   imports: [
+    UsersModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
