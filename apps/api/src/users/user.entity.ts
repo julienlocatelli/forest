@@ -1,17 +1,16 @@
-
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'user', schema: 'public' })
 export class User {
-    @PrimaryGeneratedColumn()
-    id: Number;
+  @PrimaryGeneratedColumn({ type: 'integer' })
+  id: number;
 
-    @Column()
-    firstName: string;
+  @Column({ type: 'varchar' })
+  firstName: string;
 
-    @Column()
-    lastName: string;
+  @Column({ type: 'varchar' })
+  lastName: string;
 
-    @Column({ default: true })
-    isActive: boolean;
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
 }

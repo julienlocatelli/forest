@@ -1,3 +1,5 @@
+import { DataSource } from 'typeorm';
+import { databaseOptions } from './database/database.config.js';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -7,30 +9,30 @@ import { AppService } from './app.service.js';
 import { User } from './users/user.entity.js';
 import { UsersModule } from './users/user.module.js';
 
-const dbUsername = process.env.DB_USER;
-const dbPassword = process.env.DB_PASSWORD;
-const dbName = process.env.DB_NAME;
-
-if (!dbUsername || !dbPassword || !dbName) {
-  throw new Error('Database credentials are not set in environment variables.');
-}
-
 @Module({
   imports: [
     UsersModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: dbUsername,
-      password: dbPassword,
-      database: dbName,
-      entities: [User],
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV === 'dev',
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        ...databaseOptions(),
+        entities: [User],
+        retryAttempts: 3,
+        retryDelay: 1000,
+      }),
+      dataSourceFactory: async (options) => {
+        if (!options) throw new Error('Database configuration is missing.');
+        const source = new DataSource(options);
+        try {
+          return await source.initialize();
+        } catch {
+          throw new Error(
+            'Database connection failed. Check credentials, TLS and connectivity.',
+          );
+        }
+      },
     }),
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

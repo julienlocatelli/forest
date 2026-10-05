@@ -1,124 +1,132 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Forest API — Supabase PostgreSQL
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS conserve TypeORM ; Supabase héberge PostgreSQL. Aucun Auth, Storage, Realtime
+ou accès direct aux données depuis le navigateur n'est ajouté. Les routes utilisateurs
+existantes restent sans authentification : ne pas exposer cette API publiquement sans
+traiter ce point dans une feature dédiée.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Environnements et accès
 
-## Description
+Créer un projet Supabase pour l'application et un autre projet dédié aux tests.
+Activer SSL enforcement dans les réglages de base de données. Dans Connect, copier
+une connexion directe si IPv6 disponible ou Session pooler IPv4 sur port 5432.
+Ne pas recomposer l'hôte. Pour un rôle personnalisé via pooler, utiliser
+forest_app.PROJECT_REF ou forest_migration.PROJECT_REF comme nom de connexion.
+Encoder les caractères réservés du mot de passe et retirer les query parameters de l'URL.
+Le client impose TLS avec validation du certificat. Si une CA est requise, télécharger
+le certificat du projet et fournir son chemin via DATABASE_SSL_CA_PATH ; ne jamais
+utiliser rejectUnauthorized=false.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Provisionnement initial
 
-## Project setup
+Dans chaque projet dédié, exécuter en administrateur privé les commandes suivantes.
+Elles ne contiennent pas de secrets ; si un rôle existe déjà, examiner sa définition
+avant de poursuivre plutôt que de le remplacer silencieusement.
 
-```bash
-$ bun install
+```sql
+CREATE ROLE forest_migration LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+CREATE ROLE forest_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+GRANT CONNECT ON DATABASE postgres TO forest_app, forest_migration;
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO forest_migration;
+GRANT USAGE ON SCHEMA public TO forest_app;
 ```
 
-## Compile and run the project
+La révocation de CREATE pour PUBLIC concerne un projet dédié ; si le projet est partagé,
+évaluer préalablement ses autres consommateurs. Le rôle de migration possède les objets
+Forest qu'il crée. Ne donner aucune appartenance à un rôle administrateur au runtime.
+Configurer les mots de passe avec un client PostgreSQL interactif connecté en administrateur :
 
-```bash
-# development
-$ bun run start
-
-# watch mode
-$ bun run start:dev
-
-# production mode
-$ bun run start:prod
+```text
+\password forest_migration
+\password forest_app
 ```
 
-## Run tests
+Ne pas inscrire les mots de passe dans un script versionné, une commande shell ou un
+éditeur SQL conservant son historique. Les rôles runtime et migration ne doivent pas
+avoir de grants sur auth/storage. Vérifier les grants hérités dans le projet ; les tests
+signalent toute permission excessive. Sur un projet uniquement utilisé par Forest,
+désactiver la Data API inutilisée. Sinon conserver ses réglages globaux : la migration
+révoque les droits anon/authenticated/PUBLIC sur les seuls objets Forest et active RLS.
 
-```bash
-# unit tests
-$ bun run test
+## Installation et configuration
 
-# e2e tests
-$ bun run test:e2e
+Depuis la racine : `bun install --frozen-lockfile`. Les versions Node et Bun sont dans
+mise.toml. Dans apps/api :
 
-# test coverage
-$ bun run test:cov
+```sh
+cp .env.example .env
+bun run build
+bun run migration:show
+bun run migration:run
+bun run migration:run
+bun run migration:show
+PORT=3001 bun run dev
 ```
 
-## Deployment
+Renseigner .env avant les commandes ; il est exclu de Git. PORT=3001 évite le port 3000
+du frontend. Les scripts de migration chargent .env explicitement et utilisent
+le runner TypeORM compilé sous dist/database/migrate.js ; aucun ts-node n'est nécessaire.
+Le second migration:run ne doit appliquer aucune migration. Le runtime ne demande
+que DATABASE_URL, ne crée aucune extension et n'exécute pas de DDL/migration au démarrage.
+MIGRATION_DATABASE_URL n'est utilisé que par les commandes de migration.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Paramètres : pool 5 connexions par processus, connexion 10 s, requête 15 s ; adapter le
+pool aux quotas Supabase et au nombre de réplicas. Trois tentatives de démarrage au maximum.
+DATABASE_POOL_SIZE, DATABASE_CONNECT_TIMEOUT_MS et DATABASE_QUERY_TIMEOUT_MS doivent
+être des entiers positifs. Les logs excluent les URL, erreurs brutes du driver et SQL.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Validation
 
-```bash
-$ bun install -g @nestjs/mau
-$ mau deploy
+```sh
+bun run test
+bun run build
+bun run lint
+bun run test:e2e
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+test:e2e compile l'application pour préserver les métadonnées NestJS puis charge .env.
+Renseigner TEST_DATABASE_URL et TEST_MIGRATION_DATABASE_URL avec le même projet isolé,
+distinct des URLs applicatives. Fournir la référence de production via
+PRODUCTION_DATABASE_PROJECT_REF (ou none si aucun projet de production n'existe).
+Après confirmation du projet dans le Dashboard, définir TEST_DATABASE_CONFIRM_ISOLATED=true.
+Sans cette garde, les suites refusent de démarrer. Elles exécutent les migrations et
+créent/nettoient uniquement leurs propres fiches. Aucune lecture de la base locale.
+Les suites vérifient CRUD, persistance après redémarrage, migrations répétées et permissions.
+TEST_CONFLICT_MIGRATION_DATABASE_URL vise un troisième projet jetable, provisionné avec
+les rôles mais sans table user ni historique. La suite y crée puis supprime uniquement
+sa table fixture ; elle refuse les objets préexistants et ne modifie pas la source locale.
+Le test nettoie aussi son historique créé sur ce projet initialement vide.
+Les essais Data API/TLS défaillant restent manuels selon le quickstart.
 
-## Observability
+## Échecs et retrait de l'ancien service
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+Une table public.user déjà présente sans historique bloque la migration : aucun DROP,
+reset ou adoption silencieuse. Une migration échouée est transactionnelle ; aucun rollback
+destructif automatique n'est proposé. Les commandes indiquent un échec générique sans
+secret ; vérifier configuration, rôles, certificat, réseau et conflits de schéma.
+Le statut show indique s'il reste des migrations, sans imprimer de paramètres sensibles.
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+La base locale est déclarée vide par l'utilisateur : aucun contrôle de contenu, sauvegarde
+ou import n'est requis. Après validation Supabase, retirer l'ancien workspace et ses
+ressources dédiées selon les tâches de la feature. Aucun prune global ni effacement
+Supabase n'est autorisé par cette instruction.
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+## Chemin du certificat avec variables
 
-To add it to this project:
+DATABASE_SSL_CA_PATH accepte `${HOME}` (répertoire personnel) et `${PWD}` (répertoire
+courant du processus). Depuis apps/api, par exemple :
 
-```bash
-$ bun install @nestjs/observe
+```dotenv
+DATABASE_SSL_CA_PATH=${PWD}/../../infra/cert/prod-supabase.crt
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+Ou depuis n'importe quel répertoire sur cette machine :
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+```dotenv
+DATABASE_SSL_CA_PATH=${HOME}/Developer/forest/infra/cert/prod-supabase.crt
+```
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Cette expansion s'applique au chemin du certificat dans l'API et le runner de migrations.
+Les URL et mots de passe sont conservés littéralement. Les autres variables de chemin
+sont refusées avec un diagnostic sans valeur sensible.
