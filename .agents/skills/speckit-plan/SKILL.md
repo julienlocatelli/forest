@@ -71,9 +71,9 @@ You **MUST** consider the user input before proceeding (if not empty).
 **You MUST complete this section before reporting completion to the user.**
 
 Check if `.specify/extensions.yml` exists in the project root.
-- If it does not exist, or no hooks are registered under `hooks.after_plan`, skip to the Completion Report.
+- If it does not exist, or no hooks are registered under `hooks.after_plan`, proceed to Publish Planning to Notion.
 - If it exists, read it and look for entries under the `hooks.after_plan` key.
-- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to the Completion Report.
+- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to Publish Planning to Notion.
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
@@ -101,9 +101,27 @@ Check if `.specify/extensions.yml` exists in the project root.
     To execute: `/{command}`
     ```
 
+## Publish Planning to Notion
+
+After Phase 1 and its hooks complete successfully, publish the complete planning documents to the associated Notion ticket before reporting completion. For a feature with `FEATURE_DIR/notion-source.json`, invoking this skill authorizes this publication to that ticket. Resolve the destination from its `page_id` and canonical `url`, and verify they identify the same page. Without an association, keep the local-only workflow unless the user explicitly supplies a destination; an invalid or inaccessible association is a publication blocker, not permission to select another ticket.
+
+1. Read the final `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, and every generated document under `contracts/`. Publish their complete contents, not just a summary, attachments, or local file links. Do not include `spec.md`, checklists, or `tasks.md` in this section: they belong to other phases.
+2. Fetch the ticket and read the current Markdown documentation with the Notion connector (`fetch` with `id: "notion://docs/enhanced-markdown-spec"`). Inspect the current update-tool schema and prepare the full publication before changing the page.
+3. Make the material readable: start with a short overview and document index, then group the full documents as **Implementation plan**, **Research and decisions**, **Data model**, **Contracts** (one subsection per document), and **Validation guide**. Use native collapsible headings or toggles for detailed documents when supported; retain all content, code blocks, tables, and decisions. Adapt heading levels and internal document references to the published sections so local relative links are not the only way to navigate. Label proposed code and unexecuted validation accurately.
+4. Own only the section between these headings:
+   ```markdown
+   ## Planification — Spec Kit
+   [Overview, index, and complete planning documents]
+   ## Fin de la planification — Spec Kit
+   ```
+   Fetch the ticket again immediately before writing. If the section is absent, append it with `insert_content`. If exactly one complete section exists, replace only that section using `update_content` and an exact, unique excerpt from the latest fetch. If delimiters are duplicated or incomplete, request clarification of the target portion before replacement. Preserve the specification, notes, attachments, child pages, title, properties, status, and comments.
+5. Await any asynchronous update through the connector's task-status tool, then fetch the page again. Verify a single complete planning section, coverage of every document, and preservation of neighboring content. If the update response is uncertain, fetch before retrying; allow at most one targeted correction of a confirmed missing or incomplete publication. If publication remains blocked, retain all local artifacts and report the exact failure without claiming success.
+
+Publishing planning does not run implementation, generate tasks, change ticket status, or authorize edits to other pages. If a hook already published the complete final documents, verify its result instead of adding a duplicate section.
+
 ## Completion Report
 
-Command ends after Phase 1 design. Report branch, IMPL_PLAN path, and generated artifacts.
+Command ends after Phase 1 design and the applicable Notion publication. Report branch, IMPL_PLAN path, generated artifacts, and the ticket link with the verified publication result (or the publication blocker / local-only outcome).
 
 ## Phases
 
@@ -163,4 +181,5 @@ Command ends after Phase 1 design. Report branch, IMPL_PLAN path, and generated 
 
 - [ ] Plan workflow executed and design artifacts generated
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
+- [ ] Complete planning published and verified in the associated Notion ticket, or publication blocker / absence of association reported
 - [ ] Completion reported to user with branch, plan path, and generated artifacts

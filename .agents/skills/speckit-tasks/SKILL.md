@@ -91,9 +91,9 @@ You **MUST** consider the user input before proceeding (if not empty).
 **You MUST complete this section before reporting completion to the user.**
 
 Check if `.specify/extensions.yml` exists in the project root.
-- If it does not exist, or no hooks are registered under `hooks.after_tasks`, skip to the Completion Report.
+- If it does not exist, or no hooks are registered under `hooks.after_tasks`, proceed to Publish Task Checklist to Notion.
 - If it exists, read it and look for entries under the `hooks.after_tasks` key.
-- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to the Completion Report.
+- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to Publish Task Checklist to Notion.
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
@@ -121,6 +121,24 @@ Check if `.specify/extensions.yml` exists in the project root.
     To execute: `/{command}`
     ```
 
+## Publish Task Checklist to Notion
+
+After generating and validating `tasks.md` and completing its hooks, publish the generated tasks as a checklist in the associated ticket's body, grouped by phase and user story. Use native Notion to-do blocks, not separate pages or database subtickets. For a feature with `FEATURE_DIR/notion-source.json`, invoking this skill authorizes this publication to that ticket. Resolve its `page_id` and canonical `url` and verify they identify the same page. Without an association, keep the local-only workflow unless the user explicitly supplies a destination; an invalid or inaccessible association is a publication blocker.
+
+1. Read the final `tasks.md`. Preserve every task's ID, description, file paths, `[P]` and story labels, phase order, story goals and independent test criteria. Include the dependency ordering, parallel opportunities and implementation strategy so the checklist remains actionable. Publish the contents rather than only a summary or a local file link; retain `tasks.md` as the local implementation artifact.
+2. Fetch the ticket with the Notion connector, read its current Markdown documentation (`fetch` with `id: "notion://docs/enhanced-markdown-spec"`), and inspect the current update-tool schema. Prepare the complete checklist using supported to-do syntax and readable phase headings; labels such as `[P]` and `[US1]` must remain literal text.
+3. Own only the section between these headings:
+   ```markdown
+   ## Sous-tâches — Spec Kit
+   [Task checklist grouped by phase, with execution context]
+   ## Fin des sous-tâches — Spec Kit
+   ```
+   Fetch the ticket again immediately before writing. If the section is absent, append it with `insert_content`. If exactly one complete section exists, update only that section with `update_content` using an exact, unique excerpt from the latest fetch. Duplicated or incomplete delimiters require clarification before replacement. Preserve the specification, planning, notes, attachments, child pages, title, properties, status and comments.
+4. On regeneration, reconcile by task ID and meaning, not ID alone: numbering can change. Preserve checked states for unchanged tasks; a task checked in either the existing Notion section or local `tasks.md` stays checked in the published checklist. New tasks start with their local state. If an ID now denotes different work, matching is ambiguous, or regeneration would remove existing completed or manually edited tasks, request resolution before overwriting that progress. Publishing does not mark tasks complete locally or execute them.
+5. Await any asynchronous update through the connector's task-status tool, then fetch the page. Verify each generated task appears exactly once, counts and grouping match `tasks.md`, preserved completion states remain intact, and neighboring content is unchanged. After an uncertain response, fetch before retrying; allow at most one targeted correction of a confirmed missing or incomplete publication. Retain local artifacts and report any remaining failure without claiming publication succeeded.
+
+If a hook already published the same final checklist, verify its result instead of duplicating it. This step does not create subtickets, change ticket status, publish to other pages, or begin implementation.
+
 ## Completion Report
 
 Output path to generated tasks.md and summary:
@@ -130,6 +148,7 @@ Output path to generated tasks.md and summary:
 - Independent test criteria for each story
 - Suggested MVP scope (typically just User Story 1)
 - Format validation: Confirm ALL tasks follow the checklist format (checkbox, ID, labels, file paths)
+- Notion ticket link and verified checklist publication result, or exact publication blocker / local-only outcome
 
 Context for task generation: $ARGUMENTS
 
@@ -212,4 +231,5 @@ Every task MUST strictly follow this format:
 
 - [ ] tasks.md generated with all phases, task IDs, and file paths
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
+- [ ] Task checklist published and verified in the associated Notion ticket, or publication blocker / absence of association reported
 - [ ] Completion reported to user with task count, story breakdown, and MVP scope
