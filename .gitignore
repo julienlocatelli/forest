@@ -11,3 +11,8 @@ coverage/
 *.tsbuildinfo
 
 infra/certs/
+
+# Python skill helpers
+__pycache__/
+*.pyc
+.venv/

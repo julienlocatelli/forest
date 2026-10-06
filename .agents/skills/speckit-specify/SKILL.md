@@ -16,6 +16,8 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+For a direct invocation with a Notion ticket URL in Forest, use the project-local [Specify orchestrator](../specify/SKILL.md) to read the need, prepare the branch before artifacts, and publish after clarification. When that orchestrator invokes this core skill with the extracted need and explicit `SPECIFY_FEATURE_DIRECTORY`, execute the core workflow below without delegating back. Publication and ticket status belong to the orchestrator after this workflow returns.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before specification)**:
@@ -93,7 +95,7 @@ Given that feature description, do this:
    **Create the directory and spec file**:
    - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
    - Resolve the active `spec-template` through the Spec Kit preset/template resolution stack (equivalent to `specify preset resolve spec-template`)
-   - Copy the resolved `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
+   - For a new spec, copy the resolved `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point. On resume, read and update the existing spec, preserving human edits and accepted clarifications rather than overwriting it with a template.
    - Set `SPEC_FILE` to `SPECIFY_FEATURE_DIRECTORY/spec.md`
    - Persist the resolved path to `.specify/feature.json`:
      ```json
@@ -237,9 +239,9 @@ Given that feature description, do this:
 **You MUST complete this section before reporting completion to the user.**
 
 Check if `.specify/extensions.yml` exists in the project root.
-- If it does not exist, or no hooks are registered under `hooks.after_specify`, skip to the Completion Report.
+- If it does not exist, or no hooks are registered under `hooks.after_specify`, proceed to Automatic Clarification.
 - If it exists, read it and look for entries under the `hooks.after_specify` key.
-- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to the Completion Report.
+- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to Automatic Clarification.
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
@@ -267,13 +269,20 @@ Check if `.specify/extensions.yml` exists in the project root.
     To execute: `/{command}`
     ```
 
+## Automatic Clarification
+
+After specification quality validation and the post-execution hooks, automatically run `$speckit-clarify` (`/clarify`) on `SPECIFY_FEATURE_DIRECTORY` before reporting completion. Read and follow [the clarification skill](../speckit-clarify/SKILL.md), including its hooks, sequential questions, incremental spec updates, and checklist re-validation. Execute its workflow in this session; merely suggesting the command does not satisfy this step.
+
+Use the same feature directory and `SPEC_FILE`. If a post-execution hook already completed clarification for this version of the specification, reuse its result rather than running it twice. Wait for user answers when clarification requires them; if no meaningful ambiguities remain, continue directly to the Completion Report. If specification generation failed or the clarification skill is unavailable, report the blocker instead of claiming clarification completed. Stop after clarification; planning requires a separate request.
+
 ## Completion Report
 
 Report completion to the user with:
 - `SPECIFY_FEATURE_DIRECTORY` — the feature directory path
 - `SPEC_FILE` — the spec file path
 - Checklist results summary
-- Readiness for the next phase (`$speckit-clarify` or `$speckit-plan`)
+- Clarification outcome: questions asked and answered, remaining ambiguities, and final checklist results
+- Readiness for `$speckit-plan`, or blockers that still require clarification
 
 **NOTE:** Branch creation is handled by the `before_specify` hook (git extension). Spec directory and file creation are always handled by this core command.
 
@@ -342,4 +351,5 @@ Success criteria must be:
 
 - [ ] Specification written to `SPEC_FILE` and validated against quality checklist
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
+- [ ] Automatic clarification completed on the same feature, or its blocker explicitly reported
 - [ ] Completion reported to user with feature directory, spec file path, and checklist results

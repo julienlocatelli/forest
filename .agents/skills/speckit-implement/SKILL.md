@@ -99,6 +99,13 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **IF EXISTS**: Read .specify/memory/constitution.md for governance constraints
    - **IF EXISTS**: Read quickstart.md for integration scenarios
 
+3a. **Move the associated Notion ticket to Doing**:
+   - After prerequisites, checklist gates, and implementation-context loading succeed, perform this step before any project setup changes or task execution. A rejected checklist gate or missing implementation input must not move the ticket to Doing.
+   - If `FEATURE_DIR/notion-source.json` exists, invoking this skill authorizes moving that associated ticket to Doing. Read its `page_id` and canonical `url`, verify they identify the same page, and use the Notion connector to fetch the ticket and its parent data-source schema. Confirm the exact status property and that `Doing` is an available value; a column move means updating that status property, not moving the page to another parent.
+   - Fetch the ticket again immediately before the update. If already Doing, continue without a redundant write. If To Do, update only its status to Doing; preserve its content, other properties, title, comments, and relations. For any other status, explain the mismatch and ask whether to move it to Doing before proceeding, so completed or unready tickets are not silently reopened.
+   - Await any asynchronous update through the connector's task-status tool, then fetch the page and verify the status is Doing before starting implementation. After an uncertain response, fetch before retrying; allow at most one retry if the ticket is confirmed still To Do. An invalid association, inaccessible ticket, missing Doing value, failed update, or unverified transition blocks task execution: report the exact cause without claiming implementation has started.
+   - Without an association, continue the local-only workflow and report that no Notion ticket was linked. Do not infer another destination. If implementation later fails, preserve Doing and report the blockage; this step does not automatically revert the status or move the ticket to Done.
+
 4. **Project Setup Verification**:
    - **REQUIRED**: Create/verify ignore files based on actual project setup:
 
@@ -184,9 +191,9 @@ Note: This command assumes a complete task breakdown exists in tasks.md. If task
 **You MUST complete this section before reporting completion to the user.**
 
 Check if `.specify/extensions.yml` exists in the project root.
-- If it does not exist, or no hooks are registered under `hooks.after_implement`, skip to the Completion Report.
+- If it does not exist, or no hooks are registered under `hooks.after_implement`, proceed to Review and Pull Request.
 - If it exists, read it and look for entries under the `hooks.after_implement` key.
-- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to the Completion Report.
+- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue to Review and Pull Request.
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
@@ -214,13 +221,25 @@ Check if `.specify/extensions.yml` exists in the project root.
     To execute: `/{command}`
     ```
 
+## Review and Pull Request
+
+After implementation, completion validation and applicable hooks succeed, automatically transition the associated ticket to Review and execute the project-local [pull-request skill](../pull-request/SKILL.md) on the same feature directory. Invocation of this implementation workflow authorizes that transition and the skill's commit, normal branch push and draft PR creation/update. Editing this skill alone does not execute this workflow.
+
+- Require all necessary tasks complete and required checks passed. An incomplete task or blocked validation leaves Doing and prevents this automatic handoff; report remaining work.
+- Resolve the ticket from notion-source.json, fetch the page and its data-source schema, and verify that the exact Review status is available. Missing Review is a blocker: report it without adding a schema option or substituting another status. Preserve the page's content and all other properties.
+- Fetch immediately before mutation. Doing becomes Review; already Review is reused. A different status requires explicit resolution before transition, preserving completed tickets. Await any asynchronous update and refetch to verify Review before running pull-request. After an uncertain response, refetch before retry; permit at most one retry if still Doing.
+- Actually read and execute pull-request in this session; suggesting its command does not complete the handoff. If a hook already performed the same transition or PR creation, verify and reuse its result. A missing skill or GitHub failure is reported with completed implementation preserved and Review unchanged.
+- Without a Notion association, keep the local implementation outcome and report that this ticket-specific handoff was skipped. Do not invent a ticket or execute a ticket-scoped commit.
+
 ## Completion Report
 
-Report final status with summary of completed work.
+Report final status with completed work, associated Notion ticket link and verified Review status, commit SHA and PR URL/state, or the precise remaining implementation / transition / publication blocker.
 
 ## Done When
 
 - [ ] All tasks in tasks.md completed and marked `[X]`
 - [ ] Implementation validated against specification, plan, and test coverage
+- [ ] Associated Notion ticket verified as Doing before task execution, or absence of association / transition blocker reported
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
+- [ ] Review transition verified and pull-request workflow executed, or skipped handoff / blocker reported
 - [ ] Completion reported to user with summary of completed work
