@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { createMigrationDataSource } from '../src/database/data-source.js';
+import { runMigration } from '../src/database/migrate.js';
 const { AppModule } = await import(
   new URL('../dist/app.module.js', import.meta.url).href
 );
@@ -17,13 +17,7 @@ describe('users contract and persistence', () => {
     await app.init();
   }
   beforeAll(async () => {
-    const migration = createMigrationDataSource();
-    try {
-      await migration.initialize();
-      await migration.runMigrations();
-    } finally {
-      if (migration.isInitialized) await migration.destroy();
-    }
+    expect(await runMigration('run')).toBe(0);
     await open();
   });
   afterAll(async () => {
@@ -47,8 +41,18 @@ describe('users contract and persistence', () => {
         isActive: true,
       });
       expect(Number.isInteger(result.body.id)).toBe(true);
+      expect(Object.keys(result.body).sort()).toEqual([
+        'firstName',
+        'id',
+        'isActive',
+        'lastName',
+      ]);
       created.push(result.body.id);
     }
+    expect(new Set(created).size).toBe(created.length);
+    await request(app.getHttpServer())
+      .delete(`/users/${created[0]}e0`)
+      .expect(500);
     const first = (
       await request(app.getHttpServer()).get(`/users/${created[0]}`).expect(200)
     ).body;
@@ -66,6 +70,9 @@ describe('users contract and persistence', () => {
     await request(app.getHttpServer())
       .delete(`/users/${created[0]}`)
       .expect(200);
+    await request(app.getHttpServer())
+      .delete(`/users/${created[0]}`)
+      .expect(200);
     const absent = await request(app.getHttpServer())
       .get(`/users/${created[0]}`)
       .expect(200);
@@ -80,6 +87,10 @@ describe('users contract and persistence', () => {
   });
   it('preserves existing invalid-input behavior', async () => {
     await request(app.getHttpServer()).get('/users/not-a-number').expect(400);
+    const invalidDelete = await request(app.getHttpServer())
+      .delete('/users/not-a-number')
+      .expect(500);
+    expect(invalidDelete.body.message).toBe('Internal server error');
     const result = await request(app.getHttpServer())
       .post('/users')
       .send({ firstName: 'MissingLastName' })

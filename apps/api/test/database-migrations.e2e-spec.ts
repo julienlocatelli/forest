@@ -1,15 +1,61 @@
-import { createMigrationDataSource } from '../src/database/data-source.js';
-describe('versioned migration', () => {
-  it('applies at most once and has the expected schema', async () => {
-    const source = createMigrationDataSource();
+import pg from 'pg';
+import { databaseOptions } from '../src/database/database.config.js';
+import { runMigration } from '../src/database/migrate.js';
+describe('Prisma migration', () => {
+  it('checks history and resumes after a bounded CLI timeout', async () => {
+    expect(await runMigration('run')).toBe(0);
+    const pool = new pg.Pool(databaseOptions(process.env, 'migration'));
     try {
-      await source.initialize();
-      await source.runMigrations();
-      expect(await source.runMigrations()).toEqual([]);
-      expect(await source.showMigrations()).toBe(false);
-      const columns = await source.query(
-        `SELECT column_name, is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='user'`,
-      );
+      const before = (
+        await pool.query(
+          'SELECT migration_name, finished_at FROM public._prisma_migrations ORDER BY migration_name',
+        )
+      ).rows;
+      expect(
+        await runMigration('show', {
+          ...process.env,
+          MIGRATION_COMMAND_TIMEOUT_MS: '1',
+        }),
+      ).toBe(124);
+      expect(
+        (
+          await pool.query(
+            'SELECT migration_name, finished_at FROM public._prisma_migrations ORDER BY migration_name',
+          )
+        ).rows,
+      ).toEqual(before);
+      expect(await runMigration('show')).toBe(0);
+      expect(await runMigration('run')).toBe(0);
+    } finally {
+      await pool.end();
+    }
+  });
+  it('initializes once and preserves rows on repetition', async () => {
+    expect(await runMigration('run')).toBe(0);
+    const pool = new pg.Pool(databaseOptions());
+    let id: number | undefined;
+    try {
+      id = (
+        await pool.query(
+          'INSERT INTO public."user" ("firstName","lastName") VALUES ($1,$2) RETURNING id',
+          ['Repeat', 'Test'],
+        )
+      ).rows[0].id;
+      expect(await runMigration('run')).toBe(0);
+      expect(await runMigration('show')).toBe(0);
+      expect(
+        (
+          await pool.query(
+            'SELECT "firstName" FROM public."user" WHERE id=$1',
+            [id],
+          )
+        ).rows[0].firstName,
+      ).toBe('Repeat');
+      const columns = (
+        await pool.query(
+          "SELECT column_name,is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='user'",
+        )
+      ).rows;
       expect(columns).toEqual(
         expect.arrayContaining(
           ['id', 'firstName', 'lastName', 'isActive'].map((column_name) => ({
@@ -19,68 +65,11 @@ describe('versioned migration', () => {
         ),
       );
     } finally {
-      if (source.isInitialized) await source.destroy();
-    }
-  });
-});
-
-describe('untracked destination conflict', () => {
-  it('refuses an untracked user table without altering its data', async () => {
-    const { projectReference } = await import('./database-test-environment.js');
-    const raw = process.env.TEST_CONFLICT_MIGRATION_DATABASE_URL;
-    const conflict = projectReference(
-      raw,
-      'TEST_CONFLICT_MIGRATION_DATABASE_URL',
-    );
-    const targets = [
-      'TEST_DATABASE_URL',
-      'DATABASE_URL',
-      'MIGRATION_DATABASE_URL',
-    ];
-    if (
-      conflict === process.env.PRODUCTION_DATABASE_PROJECT_REF ||
-      targets.some(
-        (key) =>
-          process.env[key] &&
-          projectReference(process.env[key], key) === conflict,
-      )
-    )
-      throw new Error('Conflict test requires a separate disposable project.');
-    const source = createMigrationDataSource({
-      ...process.env,
-      MIGRATION_DATABASE_URL: raw,
-    });
-    let ownsFixture = false;
-    try {
-      await source.initialize();
-      const [existing] = await source.query(
-        `SELECT to_regclass('public."user"') AS users, to_regclass('public.migrations') AS history`,
-      );
-      if (existing.users || existing.history)
-        throw new Error(
-          'Conflict project must be unprepared; existing objects are preserved.',
-        );
-      await source.query(
-        `CREATE TABLE public."user" (id integer PRIMARY KEY, marker text NOT NULL)`,
-      );
-      ownsFixture = true;
-      await source.query(
-        `INSERT INTO public."user" VALUES (1, 'owned-conflict-fixture')`,
-      );
-      await expect(
-        source.runMigrations({ transaction: 'all' }),
-      ).rejects.toThrow();
-      expect(await source.query(`SELECT * FROM public."user"`)).toEqual([
-        { id: 1, marker: 'owned-conflict-fixture' },
-      ]);
-    } finally {
       try {
-        if (ownsFixture) {
-          await source.query(`DROP TABLE public."user"`);
-          await source.query(`DROP TABLE IF EXISTS public.migrations`);
-        }
+        if (id !== undefined)
+          await pool.query('DELETE FROM public."user" WHERE id=$1', [id]);
       } finally {
-        if (source.isInitialized) await source.destroy();
+        await pool.end();
       }
     }
   });

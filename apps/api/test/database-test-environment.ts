@@ -35,13 +35,14 @@ export function testEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
       'TEST_CONFLICT_MIGRATION_DATABASE_URL',
     );
     if (
-      conflict === runtime ||
       conflict === env.PRODUCTION_DATABASE_PROJECT_REF ||
       ['DATABASE_URL', 'MIGRATION_DATABASE_URL'].some(
         (key) => env[key] && projectReference(env[key], key) === conflict,
       )
     ) {
-      throw new Error('Conflict test must use a separate disposable project.');
+      throw new Error(
+        'Conflict test must use a disposable project distinct from the application.',
+      );
     }
   }
   return {

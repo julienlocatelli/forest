@@ -2,8 +2,7 @@
   "name": "@forest",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "infra/db"
+    "apps/*"
   ],
   "scripts": {
     "dev": "bun run --parallel --filter '*' dev",
