@@ -29,7 +29,14 @@ describe('database authorization', () => {
           )
         ).rows[0].relrowsecurity,
       ).toBe(true);
-      for (const table of ['public."user"', 'public._prisma_migrations']) {
+      for (const table of [
+        'public."user"',
+        'public._prisma_migrations',
+        'public.auth_identity',
+        'public.auth_session',
+        'public.auth_refresh_token',
+        'public.auth_attempt',
+      ]) {
         const grants = await migration.query(
           "SELECT count(*)::int AS count FROM pg_class c CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl,acldefault('r',c.relowner))) a WHERE c.oid=$1::regclass AND a.grantee=0",
           [table],
@@ -37,7 +44,14 @@ describe('database authorization', () => {
         expect(grants.rows[0].count).toBe(0);
       }
       for (const role of ['anon', 'authenticated']) {
-        for (const table of ['public."user"', 'public._prisma_migrations']) {
+        for (const table of [
+          'public."user"',
+          'public._prisma_migrations',
+          'public.auth_identity',
+          'public.auth_session',
+          'public.auth_refresh_token',
+          'public.auth_attempt',
+        ]) {
           expect(
             (
               await migration.query(
@@ -80,6 +94,29 @@ describe('database authorization', () => {
           ])
         ).rows[0].isActive,
       ).toBe(false);
+      for (const table of [
+        'auth_identity',
+        'auth_session',
+        'auth_refresh_token',
+        'auth_attempt',
+      ]) {
+        expect(
+          (
+            await migration.query(
+              'SELECT relrowsecurity FROM pg_class WHERE oid=$1::regclass',
+              [`public.${table}`],
+            )
+          ).rows[0].relrowsecurity,
+        ).toBe(true);
+        expect(
+          (
+            await app.query(
+              "SELECT has_table_privilege(current_user,$1,'SELECT') AS read, has_table_privilege(current_user,$1,'INSERT') AS write",
+              [`public.${table}`],
+            )
+          ).rows[0],
+        ).toEqual({ read: true, write: true });
+      }
       for (const schema of ['auth', 'storage']) {
         const result = await app.query(
           "SELECT has_table_privilege(current_user,c.oid,'SELECT') AS allowed FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relkind='r'",

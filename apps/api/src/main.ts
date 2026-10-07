@@ -21,7 +21,7 @@ try {
   await bootstrap();
 } catch {
   console.error(
-    'Application startup failed. Check database configuration and connectivity.',
+    'Application startup failed. Check database and authentication configuration, migrations and connectivity.',
   );
   process.exitCode = 1;
 }

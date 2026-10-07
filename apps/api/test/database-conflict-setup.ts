@@ -55,4 +55,20 @@ export default async function setup() {
       await pool.end();
     }
   }
+  assert.equal(
+    await runMigration('run', isolated),
+    0,
+    'Migrations must finish before app bootstrap.',
+  );
+  return async () => {
+    const runtime = new pg.Pool(databaseOptions(isolated));
+    try {
+      await runtime.query(
+        'DELETE FROM public."user" WHERE id IN (SELECT "userId" FROM public.auth_identity WHERE email=$1)',
+        [isolated.DEFAULT_USER_EMAIL],
+      );
+    } finally {
+      await runtime.end();
+    }
+  };
 }

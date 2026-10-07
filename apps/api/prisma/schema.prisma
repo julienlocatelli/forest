@@ -12,5 +12,48 @@ model User {
   firstName String @db.VarChar
   lastName String @db.VarChar
   isActive Boolean @default(true)
+  identity AuthIdentity?
+  sessions AuthSession[]
   @@map("user")
+}
+
+model AuthIdentity {
+  userId Int @id
+  email String @unique @db.VarChar(254)
+  passwordHash String @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("auth_identity")
+}
+model AuthSession {
+  id String @id @db.Uuid
+  userId Int
+  accessHash String @unique @db.Char(64)
+  accessExpiresAt DateTime @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens AuthRefreshToken[]
+  @@index([userId], map: "auth_session_user_idx")
+  @@index([expiresAt], map: "auth_session_expiry_idx")
+  @@map("auth_session")
+}
+model AuthRefreshToken {
+  hash String @id @db.Char(64)
+  sessionId String @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  session AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([sessionId], map: "auth_refresh_session_idx")
+  @@map("auth_refresh_token")
+}
+model AuthAttempt {
+  category String @db.VarChar(32)
+  key String @db.Char(64)
+  windowStart DateTime @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  count Int
+  @@id([category, key, windowStart])
+  @@index([expiresAt], map: "auth_attempt_expiry_idx")
+  @@map("auth_attempt")
 }
