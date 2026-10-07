@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { StartupError } from '../startup-error.js';
 
 export function normalizeEmail(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -35,7 +36,7 @@ export function validPassword(value: unknown, minimum = 1): value is string {
 export function authConfiguration(env: NodeJS.ProcessEnv) {
   const email = normalizeEmail(env.DEFAULT_USER_EMAIL);
   if (!email || !validPassword(env.DEFAULT_USER_PASSWORD, 12))
-    throw new Error('Invalid default user configuration.');
+    throw new StartupError('AUTH_CONFIG');
   const origins = (env.AUTH_ALLOWED_ORIGINS ?? '')
     .split(',')
     .map((s) => s.trim());
@@ -56,7 +57,7 @@ export function authConfiguration(env: NodeJS.ProcessEnv) {
       }
     })
   )
-    throw new Error('Invalid authentication origins configuration.');
+    throw new StartupError('AUTH_ORIGINS');
   return {
     email,
     password: env.DEFAULT_USER_PASSWORD,

@@ -1,7 +1,30 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PrismaService } from './prisma.service.js';
 
 describe('Prisma lifecycle', () => {
+  it('rejects a database without required tables before provisioning and closes its connection', async () => {
+    const previous = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = 'postgresql://forest:private@127.0.0.1:1/forest';
+    const client = new PrismaService();
+    try {
+      vi.spyOn(client, '$connect').mockResolvedValue(undefined);
+      vi.spyOn(client, '$queryRaw')
+        .mockResolvedValueOnce([{ '?column?': 1 }])
+        .mockResolvedValueOnce([{ ready: false }]);
+      const close = vi
+        .spyOn(client, '$disconnect')
+        .mockResolvedValue(undefined);
+      await expect(client.onModuleInit()).rejects.toMatchObject({
+        code: 'DATABASE_SCHEMA',
+      });
+      expect(close).toHaveBeenCalledOnce();
+    } finally {
+      vi.restoreAllMocks();
+      await client.onModuleDestroy();
+      if (previous === undefined) delete process.env.DATABASE_URL;
+      else process.env.DATABASE_URL = previous;
+    }
+  });
   it('rejects missing runtime credentials without requiring migration credentials', () => {
     const previous = process.env.DATABASE_URL;
     delete process.env.DATABASE_URL;
