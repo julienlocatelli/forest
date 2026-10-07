@@ -15,7 +15,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     globals: true,
-    globalSetup: ['./test/database-conflict-setup.ts'],
+    globalSetup: ['./test/database-setup.ts'],
     env: Object.fromEntries(
       Object.entries(isolated).filter(
         (entry): entry is [string, string] => entry[1] !== undefined,

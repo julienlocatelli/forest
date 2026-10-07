@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { startupMessage } from './startup-error.js';
 async function bootstrap() {
   // Framework exception stacks can contain driver details. Never print them verbatim.
   const app = await NestFactory.create(AppModule, {
@@ -19,9 +20,7 @@ async function bootstrap() {
 }
 try {
   await bootstrap();
-} catch {
-  console.error(
-    'Application startup failed. Check database and authentication configuration, migrations and connectivity.',
-  );
+} catch (error) {
+  console.error(startupMessage(error));
   process.exitCode = 1;
 }

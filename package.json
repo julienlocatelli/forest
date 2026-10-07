@@ -6,7 +6,6 @@
   ],
   "scripts": {
     "dev": "bun run --parallel --filter '*' dev",
-    "postdev": "echo 'ENCULER'",
     "knip": "knip"
   },
   "devDependencies": {

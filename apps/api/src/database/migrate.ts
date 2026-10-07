@@ -112,9 +112,9 @@ async function assertDestination(
     const {
       rows: [objects],
     } = await pool.query(
-      `SELECT to_regclass('public."user"') AS users, to_regclass('public.migrations') AS legacy, to_regclass('public._prisma_migrations') AS history`,
+      `SELECT to_regclass('public."user"') AS users, to_regclass('public._prisma_migrations') AS history`,
     );
-    if (objects.legacy || (objects.users && !objects.history))
+    if (objects.users && !objects.history)
       throw new Error('Destination conflict.');
     if (objects.history) {
       const {

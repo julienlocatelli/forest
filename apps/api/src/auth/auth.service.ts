@@ -10,6 +10,7 @@ import { PrismaService } from '../database/prisma.service.js';
 import { AuthConfig } from './auth.config.js';
 import { PasswordService } from './password.service.js';
 import { AuthAudit } from './auth.audit.js';
+import { StartupError } from '../startup-error.js';
 import {
   digest,
   tokenPair,
@@ -42,9 +43,7 @@ export class AuthService implements OnApplicationBootstrap, OnModuleDestroy {
       }, 3600000);
       this.timer.unref();
     } catch {
-      throw new Error(
-        'Authentication startup failed. Check configuration, migrations and connectivity.',
-      );
+      throw new StartupError('AUTH_PROVISION');
     }
   }
   onModuleDestroy(): void {

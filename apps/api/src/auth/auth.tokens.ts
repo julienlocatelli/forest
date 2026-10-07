@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
-export const ACCESS_MS = 15 * 60 * 1000;
-export const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
+const ACCESS_MS = 15 * 60 * 1000;
+const SESSION_MS = 7 * 24 * 60 * 60 * 1000;
 export function digest(value: string): string {
   return createHash('sha256').update(value).digest('hex');
 }

@@ -4,6 +4,25 @@
     "-lintignore"
   ],
   "workspaces": {
-    ".": {}
-  }
+    ".": {},
+    "apps/api": {
+      "entry": [
+        "src/main.ts",
+        "src/database/migrate.ts",
+        "src/**/*.spec.ts",
+        "test/**/*.e2e-spec.ts",
+        "test/database-setup.ts",
+        "vitest.config*.ts",
+        "test/**/*.spec.ts"
+      ],
+      "vitest": false,
+      "ignoreDependencies": [
+        "@prisma/client",
+        "@nestjs/mau"
+      ]
+    }
+  },
+  "ignore": [
+    ".agents/**"
+  ]
 }

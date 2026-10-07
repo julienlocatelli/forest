@@ -29,34 +29,31 @@
     "@nestjs/common": "12.0.1",
     "@nestjs/core": "12.0.1",
     "@nestjs/platform-express": "12.0.1",
-    "@supabase/ssr": "0.12.7",
-    "@supabase/supabase-js": "2.117.2",
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "cookie-parser": "1.4.7",
     "pg": "8.23.0",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.1",
-    "@prisma/client": "7.10.0",
-    "@prisma/adapter-pg": "7.10.0",
-    "cookie-parser": "1.4.7"
+    "rxjs": "7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "12.0.0",
     "@nestjs/mau": "0.2.6",
     "@nestjs/schematics": "12.0.0",
     "@nestjs/testing": "12.0.1",
+    "@types/cookie-parser": "1.4.10",
     "@types/express": "5.0.0",
     "@types/node": "24.0.0",
+    "@types/pg": "8.23.1",
     "@types/supertest": "7.2.1",
     "@vitest/coverage-v8": "4.1.2",
     "oxlint": "1.58.0",
     "oxlint-tsgolint": "7.0.2001",
     "prettier": "3.4.2",
-    "source-map-support": "0.5.21",
+    "prisma": "7.10.0",
     "supertest": "7.0.0",
     "typescript": "6.0.2",
     "vite-tsconfig-paths": "5.1.4",
-    "vitest": "4.1.2",
-    "prisma": "7.10.0",
-    "@types/pg": "8.23.1",
-    "@types/cookie-parser": "1.4.10"
+    "vitest": "4.1.2"
   }
 }

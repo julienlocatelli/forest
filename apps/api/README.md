@@ -95,10 +95,6 @@ Après confirmation du projet dans le Dashboard, définir TEST_DATABASE_CONFIRM_
 Sans cette garde, les suites refusent de démarrer. Elles exécutent les migrations et
 créent/nettoient uniquement leurs propres fiches. Aucune lecture de la base locale.
 Les suites vérifient CRUD, persistance après redémarrage, migrations répétées et permissions.
-TEST_CONFLICT_MIGRATION_DATABASE_URL peut viser le même projet isolé de test.
-Le globalSetup crée un historique TypeORM factice public.migrations, vérifie son
-refus et sa préservation, puis supprime uniquement sa fixture avant les suites.
-Une table migrations préexistante provoque un arrêt sans suppression.
 La suite database-connectivity.e2e-spec.ts vérifie séparément la CA runtime et CLI, le refus de connexion et la fermeture des ressources.
 
 ## Échecs et reprise
@@ -109,7 +105,14 @@ destructif automatique n'est proposé. Les commandes indiquent un échec génér
 secret ; vérifier configuration, rôles, certificat, réseau et conflits de schéma.
 Le statut show retourne 0 quand le schéma est à jour et nonzero en cas d’attente ou d’anomalie, sans imprimer de paramètres sensibles. Le wrapper borne le CLI à 120000 ms (MIGRATION_COMMAND_TIMEOUT_MS, entier positif) et masque sa sortie brute.
 
-La cible est déclarée neuve et vide : aucune reprise métier n’est prévue. Une table non suivie ou un historique TypeORM bloque migration:run ; aucune suppression, adoption ou résolution d’historique implicite. Vérifier l’état et préparer une réparation revue si ce prérequis est faux.
+Une base neuve utilise `migration:run`. Une table utilisateur sans historique Prisma
+bloque cette commande ; aucune suppression ou adoption implicite.
+
+Le schéma courant est géré par Prisma. La reprise ponctuelle de la base de
+développement a été effectuée ; aucun mécanisme TypeORM ne reste dans l’application.
+Depuis la racine, `bun dev` lance les workspaces et charge `apps/api/.env` pour l’API.
+Les tables absentes produisent un diagnostic `DATABASE_SCHEMA`, sans erreur brute
+ni secret. Le démarrage HTTP ne modifie pas le schéma.
 
 ## Chemin du certificat avec variables
 
@@ -137,11 +140,6 @@ sont refusées avec un diagnostic sans valeur sensible.
 Pour une évolution future, générer un draft `prisma migrate dev --create-only` seulement sur développement et shadow dédiés, avec les rôles nécessaires préprovisionnés. Ne jamais utiliser production comme shadow. L’initialisation de ce ticket a été générée offline avec migrate diff --from-empty puis complétée par les droits SQL.
 
 Le runtime utilise DATABASE_URL sans query parameters et un objet TLS pg vérifié. Le wrapper construit séparément la configuration TLS du moteur CLI via MIGRATION_DATABASE_URL ; DATABASE_SSL_CA_PATH est validé puis transmis comme sslcert. Cette compatibilité doit être confirmée sur le projet de test avant livraison. Ne jamais contourner un échec CA par une désactivation TLS. Les credentials migration ne sont pas nécessaires au démarrage applicatif.
-
-Le test de conflit peut réutiliser le projet isolé principal. Le globalSetup vérifie
-le refus d’un historique TypeORM temporaire avant les suites, puis supprime uniquement
-sa propre table public.migrations. Une table migrations préexistante provoque un arrêt
-sans suppression. Les tests ne réinitialisent jamais la base ni l’historique Prisma.
 
 ### CLI de migration sous Linux sur macOS
 
