@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import type { PostgresDataSourceOptions } from 'typeorm/driver/postgres/PostgresDataSourceOptions.js';
-import { databaseLogger } from './database.logger.js';
+import type { PoolConfig } from 'pg';
 
-type Environment = Record<string, string | undefined>;
+export type Environment = Record<string, string | undefined>;
 function certificatePath(value: string, env: Environment): string {
   return value.replace(/\$\{([^}]+)\}/g, (_match, variable: string) => {
     if (variable === 'HOME') return env.HOME || homedir();
@@ -36,7 +35,7 @@ export function connectionUrl(value: string | undefined, key: string): URL {
     );
   }
 }
-function positiveInteger(
+export function positiveInteger(
   env: Environment,
   key: string,
   fallback: number,
@@ -54,7 +53,7 @@ function positiveInteger(
 export function databaseOptions(
   env: Environment = process.env,
   purpose: 'runtime' | 'migration' = 'runtime',
-): PostgresDataSourceOptions {
+): PoolConfig {
   const key = purpose === 'runtime' ? 'DATABASE_URL' : 'MIGRATION_DATABASE_URL';
   const url = connectionUrl(env[key], key);
   let ca: string | undefined;
@@ -69,34 +68,36 @@ export function databaseOptions(
     }
   }
   return {
-    type: 'postgres',
     host: url.hostname,
     port: Number(url.port || 5432),
-    username: decodeURIComponent(url.username),
+    user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: decodeURIComponent(url.pathname.slice(1)),
-    schema: 'public',
     ssl: { rejectUnauthorized: true, ...(ca ? { ca } : {}) },
-    synchronize: false,
-    migrationsRun: false,
-    installExtensions: false,
-    poolSize:
+    max:
       purpose === 'runtime' ? positiveInteger(env, 'DATABASE_POOL_SIZE', 5) : 1,
-    connectTimeoutMS: positiveInteger(
+    connectionTimeoutMillis: positiveInteger(
       env,
       'DATABASE_CONNECT_TIMEOUT_MS',
       10000,
     ),
-    extra: {
-      query_timeout: positiveInteger(env, 'DATABASE_QUERY_TIMEOUT_MS', 15000),
-      statement_timeout: positiveInteger(
-        env,
-        'DATABASE_QUERY_TIMEOUT_MS',
-        15000,
-      ),
-    },
-    logger: databaseLogger,
-    logging: ['error', 'warn'],
-    poolErrorHandler: () => console.error('Database pool connection failed.'),
+    query_timeout: positiveInteger(env, 'DATABASE_QUERY_TIMEOUT_MS', 15000),
+    statement_timeout: positiveInteger(env, 'DATABASE_QUERY_TIMEOUT_MS', 15000),
   };
+}
+export function migrationUrl(env: Environment = process.env): string {
+  const url = connectionUrl(
+    env.MIGRATION_DATABASE_URL,
+    'MIGRATION_DATABASE_URL',
+  );
+  databaseOptions(env, 'migration'); // Validate CA and limits before constructing CLI settings.
+  url.searchParams.set('sslmode', 'require');
+  url.searchParams.set('sslaccept', 'strict');
+  if (env.DATABASE_SSL_CA_PATH) {
+    url.searchParams.set(
+      'sslcert',
+      certificatePath(env.DATABASE_SSL_CA_PATH, env),
+    );
+  }
+  return url.href;
 }

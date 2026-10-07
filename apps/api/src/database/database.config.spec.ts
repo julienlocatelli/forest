@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { databaseOptions } from './database.config.js';
+import { databaseOptions, migrationUrl } from './database.config.js';
 const valid = {
   DATABASE_URL:
     'postgresql://forest_app:private@db.test.supabase.co:5432/postgres',
@@ -77,13 +77,22 @@ describe('database configuration', () => {
       'DATABASE_SSL_CA_PATH must reference a readable PEM certificate.',
     );
   });
-  it('disables implicit DDL and verifies TLS', () => {
+  it('bounds the runtime pool and verifies TLS', () => {
     const options = databaseOptions(valid);
-    expect(options.synchronize).toBe(false);
-    expect(options.migrationsRun).toBe(false);
-    expect(options.installExtensions).toBe(false);
     expect(options.ssl).toEqual({ rejectUnauthorized: true });
-    expect(options.poolSize).toBe(5);
-    expect(options.connectTimeoutMS).toBe(10000);
+    expect(options.user).toBe('forest_app');
+    expect(options.database).toBe('postgres');
+    expect(options.max).toBe(5);
+    expect(options.connectionTimeoutMillis).toBe(10000);
+    expect(options.query_timeout).toBe(15000);
+    expect(options.statement_timeout).toBe(15000);
+  });
+  it('uses separate strict TLS settings for the migration CLI', () => {
+    const url = new URL(
+      migrationUrl({ MIGRATION_DATABASE_URL: valid.DATABASE_URL }),
+    );
+    expect(url.searchParams.get('sslmode')).toBe('require');
+    expect(url.searchParams.get('sslaccept')).toBe('strict');
+    expect(() => migrationUrl(valid)).toThrow('MIGRATION_DATABASE_URL');
   });
 });

@@ -1,0 +1,8 @@
+{
+  "url": "https://app.notion.com/p/3f174e4626fd80c18be6d5c49739f0dd",
+  "page_id": "3f174e46-26fd-80c1-8be6-d5c49739f0dd",
+  "ticket_number": 10,
+  "branch_name": "chore/10-migrate-prisma",
+  "base_ref": "refs/heads/main",
+  "base_commit": "de283992b0e7c044e82ad13d45a3a10d4bb62185"
+}

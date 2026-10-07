@@ -16,3 +16,6 @@ infra/certs/
 __pycache__/
 *.pyc
 .venv/
+
+# Generated Prisma client
+apps/api/src/generated/prisma/
