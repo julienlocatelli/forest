@@ -154,3 +154,38 @@ Puis lancer depuis la racine `bun run --filter @forest/api migration:show` ou
 secret est transmis par environnement. Le CLI conserve sslmode=require et
 sslaccept=strict. Le runtime continue à utiliser Node avec rejectUnauthorized=true.
 Le mode native reste le défaut pour Linux ; aucun basculement silencieux.
+
+## Local authentication
+
+The API requires `DEFAULT_USER_EMAIL`, `DEFAULT_USER_PASSWORD` (12–128 characters)
+and `AUTH_ALLOWED_ORIGINS` (comma-separated exact origins). Apply the additive Prisma
+migration before starting. Startup creates an ordinary active account only if its
+normalized email is absent. Existing accounts, even inactive ones, keep their password
+and profile. Changing the password in `.env` does not reset it; changing the email can
+create another account. Invalid configuration, unavailable database or provisioning
+failure prevents HTTP readiness. No DDL or migrations run during application startup.
+
+Endpoints: `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`.
+POST requests require `X-Forest-Request: 1`; login requires JSON `{email,password}`.
+Tokens are returned only as HttpOnly Secure SameSite=Lax cookies. Browser clients use
+`credentials: 'include'` with an allow-listed Origin. Use localhost locally, HTTPS
+otherwise. Independent frontend/API sites are out of scope; proxy IP headers are not
+trusted by default. Existing `/users` routes remain public, including DELETE: this
+feature does not secure the entire API. OAuth/Keycloak, public registration, password
+recovery and a frontend are excluded.
+
+Access lasts 15 minutes, sessions expire absolutely after seven days. Refresh rotates
+both tokens and invalidates old access. Reusing a consumed refresh token revokes the
+session. Serialize refresh calls across tabs; a lost refresh response can require a
+new login. Logout revokes the session and clears cookies. Expired sessions/rate windows
+are cleaned at startup and hourly. Password changes require a separate future workflow.
+
+Login limits: 20/IP and 5/email per five-minute fixed window; refresh: 60/IP per minute.
+PostgreSQL counters are shared. Email limits can temporarily block a targeted account;
+there is no permanent lockout. Internal audit events contain only outcome, correlation
+and optional user ID. Passwords, emails, tokens, bodies and raw driver errors are excluded.
+Scrypt permits two active jobs and sixteen waiting per process; overflow returns 503.
+
+E2E tests always replace `.env` auth credentials with unique synthetic accounts, target
+the explicitly isolated project and remove owned fixtures. Never target application or
+production databases. Full validation guide: `specs/6-user-login-route/quickstart.md`.
