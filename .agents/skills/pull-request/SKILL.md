@@ -5,12 +5,12 @@ description: Commit a validated Forest ticket with its Notion TASK in the Conven
 
 # Pull request for a Forest ticket
 
-Invoke directly with a feature directory, or through speckit-implement after successful validation and the verified Review transition. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub draft PR. A request to edit this skill does not execute those actions. No merge, force-push, release, deployment or edits to other tickets are authorized.
+Invoke directly with a feature directory after successful validation and the verified Review transition. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub draft PR. A request to edit this skill does not execute those actions. No merge, force-push, release, deployment or edits to other tickets are authorized.
 
 ## Verify context and scope
 
 1. Read the feature's spec.md, plan.md, tasks.md and notion-source.json. Fetch the associated ticket and verify its UUID, canonical URL and positive numeric TASK. TASK is the display number, not a Notion page UUID: never fabricate app.notion.com/p/<TASK>. Use the verified canonical URL from the association/fetch in the commit body and PR.
-2. Require completed tasks and successful required checks. Document unavailable checks honestly; incomplete implementation or failed required checks blocks publication unless the user explicitly accepts that limitation. Inspect repository instructions, current branch, remotes/upstream, base branch, staged/unstaged changes, untracked in-scope files and existing PRs. Verify actual Git branch rather than relying on Spec Kit's feature identifier. Default to main only when confirmed as the intended base.
+2. Require completed tasks and successful required checks. Document unavailable checks honestly; incomplete implementation or failed required checks blocks publication unless the user explicitly accepts that limitation. Inspect repository instructions, current branch, remotes/upstream, base branch, staged/unstaged changes, untracked in-scope files and existing PRs. Default to main only when confirmed as the intended base.
 3. Read the full diff against the base and identify changes belonging to this ticket. Stage explicit paths/hunks; preserve unrelated work and preexisting staging. If mixed staging cannot be separated safely, ask for resolution. Inspect the final staged diff for secrets, private data and generated noise before committing. Run applicable repository checks and git diff --check; use real scripts, without introducing a new test requirement for documentation alone.
 
 ## Commit convention
