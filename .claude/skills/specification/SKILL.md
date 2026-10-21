@@ -1,6 +1,6 @@
 ---
 name: specification
-description: Turn a Forest backlog ticket (BLF-<n>) into clarified English user stories with Gherkin acceptance criteria, published to the Go Forest board in Notion. Use when the user runs /specification BLF-<n>.
+description: Turn a Forest backlog ticket (BLF-<n>) into clarified English user stories with acceptance criteria (Gherkin when they will drive e2e tests), published to the Go Forest board in Notion. Use when the user runs /specification BLF-<n>.
 argument-hint: BLF-<n>
 ---
 
@@ -8,7 +8,7 @@ argument-hint: BLF-<n>
 
 Turn one backlog ticket into one or more user stories. The backlog ticket only holds ideas; your job is to clarify them with the user and write stories that describe the **what** and the **why**, never the **how**.
 
-**Specification only. Do not write, change or plan code, create branches or commit.** The only writes allowed are the Notion changes below and scratch files in your scratchpad directory.
+**Specification only. Change no repository file: no code, branch or commit.** Describe every change to make in the story itself; only implementation edits files. The only writes allowed are the Notion changes below and lint drafts in your scratchpad directory.
 
 ## Notion targets
 
@@ -50,17 +50,26 @@ Before writing anything, list what is unclear: persona, user value, scope bounda
 
 Questions and discussion with the user follow the user's language; the stories themselves are **always written in English**.
 
+Every ticket produces at least one story, including process, tooling or technical work: implementation branches and pull requests are named after the story's `TASK` number, never the backlog ticket's.
+
 ### 4. Split and draft
 
 Split so each story is independent, valuable on its own, estimable, small enough for one sprint and testable. Prefer several small stories over one large one.
 
-For each story, fill [templates/user-story.md](templates/user-story.md) and follow [references/gherkin-guidelines.md](references/gherkin-guidelines.md). Title: `[BLF-<n>] <short goal, imperative>`, for example `[BLF-6] Log in with a local account`.
+For each story, fill [templates/user-story.md](templates/user-story.md) and pick one form of acceptance criteria:
+
+- **Gherkin** when the behaviour is observable in the Forest application and will be covered by e2e tests. Follow [references/gherkin-guidelines.md](references/gherkin-guidelines.md).
+- **Checklist** otherwise, for example a skill, tooling or process change: one verifiable outcome per item.
+
+Ask the user when the choice is unclear.
+
+Title: `[BLF-<n>] <short goal, imperative>`, for example `[BLF-6] Log in with a local account`.
 
 ### 5. Lint
 
 For each story, in your scratchpad directory:
 
-1. Write the story to `<slug>.md` and its Gherkin block alone to `<slug>.feature`.
+1. Write the story to `<slug>.md`. For a Gherkin story, also write its Gherkin block alone to `<slug>.feature`.
 2. Run from the repository root:
 
    ```sh
@@ -68,7 +77,9 @@ For each story, in your scratchpad directory:
    bun run lint:story <scratchpad>/<slug>.md
    ```
 
-3. Fix every reported issue and rerun until both pass. A leftover `<placeholder>` fails `lint:story` (MD033): fill it or remove the line.
+   Skip `lint:gherkin` for a checklist story.
+
+3. Fix every reported issue and rerun until every lint passes. A leftover `<placeholder>` fails `lint:story` (MD033): fill it or remove the line.
 
 ### 6. Review with the user
 
@@ -89,4 +100,4 @@ Once every story is published and verified, set the backlog ticket's Status to `
 
 ### 9. Report
 
-Give the user the ticket, its final status, and a link to each created story with its `TASK` number. Nothing else follows: implementation is a separate step.
+Give the user the ticket, its final status, and a link to each created story with its `TASK` number and the branch it implies, `<type>/<TASK>-<slug>`. Nothing else follows: implementation is a separate step.
