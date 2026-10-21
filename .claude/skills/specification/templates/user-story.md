@@ -13,6 +13,15 @@
 
 ## Acceptance criteria
 
+<Keep exactly one of the two forms below and delete the other, with these instructions.>
+
+<Checklist form, when no e2e test will cover the story:>
+
+- [ ] <verifiable outcome>
+- [ ] <verifiable outcome>
+
+<Gherkin form, when the behaviour is observable in the application and will drive e2e tests:>
+
 ```gherkin
 Feature: <feature name>
 
