@@ -23,6 +23,6 @@
     }
   },
   "ignore": [
-    ".agents/**"
+    ".claude/**"
   ]
 }

@@ -11,7 +11,7 @@ Use this project-local skill when preparing a branch for a Notion ticket. Read t
 2. Summarize the need in one to four words, preferably three or four when useful. Normalize to lowercase ASCII, transliterate accents and separate words with hyphens; do not blindly truncate the title. A release still follows type/TASK-description.
 3. Call `scripts/prepare_branch.py` with Python 3 and arguments, never interpolated shell code:
    ```text
-   python3 .agents/skills/git-ticket-branch/scripts/prepare_branch.py --repo <forest> --page-id <uuid> --ticket <TASK> --type <type> --description <slug> [--association <path>] [--branch-name <explicit-selection>]
+   python3 .claude/skills/git-ticket-branch/scripts/prepare_branch.py --repo <forest> --page-id <uuid> --ticket <TASK> --type <type> --description <slug> [--association <path>] [--branch-name <explicit-selection>]
    ```
    Use the existing association when available. If Git candidates exist without an association, obtain an explicit selection and pass --branch-name; an already-active exact candidate can be resumed after interrupted creation. The helper validates the explicit name and ticket. It creates from local main, with no fetch, and returns structured JSON.
 4. Exit 0 and verified BRANCH_NAME permit the caller to write artifacts. Nonzero stops dependent work; explain error.code and available diagnostics. Preserve any successful branch if later specification fails. No helper operation writes specs, association, pointer, commits, stash, push, or reset.

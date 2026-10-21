@@ -6,11 +6,15 @@
   ],
   "scripts": {
     "dev": "bun run --parallel --filter '*' dev",
-    "knip": "knip"
+    "knip": "knip",
+    "lint:gherkin": "gherkin-lint -c .claude/skills/specification/lint/gherkin-lintrc.json",
+    "lint:story": "markdownlint-cli2 --config .claude/skills/specification/lint/.markdownlint-cli2.jsonc"
   },
   "devDependencies": {
     "@types/node": "26.6.3",
+    "gherkin-lint": "4.2.4",
     "knip": "6.38.0",
+    "markdownlint-cli2": "0.23.3",
     "typescript": "7.0.2"
   }
 }
