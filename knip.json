@@ -20,6 +20,14 @@
         "@prisma/client",
         "@nestjs/mau"
       ]
+    },
+    "test-e2e": {
+      "entry": [
+        "cucumber.mjs",
+        "support/**/*.ts",
+        "steps/**/*.ts"
+      ],
+      "cucumber": false
     }
   },
   "ignore": [
