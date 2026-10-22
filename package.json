@@ -10,7 +10,8 @@
     "knip": "knip",
     "lint:gherkin": "gherkin-lint -c .claude/skills/specification/lint/gherkin-lintrc.json",
     "lint:story": "markdownlint-cli2 --config .claude/skills/specification/lint/.markdownlint-cli2.jsonc",
-    "test:e2e": "bun run --cwd test-e2e test"
+    "test:e2e": "bun run --cwd test-e2e test",
+    "test:scripts": "bun test ./.github/scripts"
   },
   "devDependencies": {
     "@types/node": "26.6.3",

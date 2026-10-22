@@ -1,0 +1,33 @@
+name: Story done on merge
+
+# Moves the Go Forest story of a merged pull request to Done.
+# The story is found from the TASK number in the branch name: <type>/<TASK>-<slug>.
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Story branch, for example chore/20-done-on-merge
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  story-done:
+    # A pull request closed without merging moves nothing.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          install_args: bun
+      - name: Move the story to Done
+        # The branch goes through the environment, never into the shell command.
+        env:
+          BRANCH: ${{ inputs.branch || github.head_ref }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: bun .github/scripts/story-done.ts
