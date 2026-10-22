@@ -4,7 +4,11 @@
     "-lintignore"
   ],
   "workspaces": {
-    ".": {},
+    ".": {
+      "entry": [
+        ".github/scripts/*.ts"
+      ]
+    },
     "apps/api": {
       "entry": [
         "src/main.ts",
