@@ -12,6 +12,12 @@ coverage/
 
 infra/certs/
 
+# e2e run reports and failure screenshots
+test-e2e/reports/
+
+# Skill copies generated for other agents; .claude/skills is the source
+.agents/
+
 # Python skill helpers
 __pycache__/
 *.pyc

@@ -8,9 +8,12 @@ import { databaseOptions } from '../apps/api/src/database/database.config.ts';
 import { testEnvironment } from '../apps/api/test/database-test-environment.ts';
 
 const api = resolve(import.meta.dirname, '../apps/api');
+const front = resolve(import.meta.dirname, '../apps/front');
 const cucumber = resolve(import.meta.dirname, 'node_modules/.bin/cucumber-js');
 const port = process.env.E2E_API_PORT ?? '3101';
 const apiUrl = `http://localhost:${port}`;
+const frontPort = process.env.E2E_FRONT_PORT ?? '3100';
+const frontUrl = `http://localhost:${frontPort}`;
 // A fresh synthetic account per run, so login rate limits never carry over between runs.
 const user = {
   email: `e2e-${randomUUID()}@example.com`,
@@ -37,10 +40,10 @@ function run(command: string, args: string[], cwd: string, env: NodeJS.ProcessEn
   });
 }
 
-async function waitFor(url: string, exited: () => boolean, timeout = 60000) {
+async function waitFor(name: string, url: string, exited: () => boolean, timeout = 60000) {
   const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
-    if (exited()) throw new Error('The API stopped before answering.');
+    if (exited()) throw new Error(`The ${name} stopped before answering.`);
     try {
       await fetch(url);
       return;
@@ -48,7 +51,26 @@ async function waitFor(url: string, exited: () => boolean, timeout = 60000) {
       await new Promise((wait) => setTimeout(wait, 500));
     }
   }
-  throw new Error(`The API did not answer on ${url} within ${timeout} ms.`);
+  throw new Error(`The ${name} did not answer on ${url} within ${timeout} ms.`);
+}
+
+// Starts a server and waits until it answers; the returned function stops it.
+async function start(name: string, command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv, url: string) {
+  const server = spawn(command, args, { cwd, env, stdio: 'inherit' });
+  let exited = false;
+  const stopped = new Promise((done) => server.on('close', done));
+  server.on('close', () => (exited = true));
+  const stop = async () => {
+    if (!exited) server.kill('SIGTERM');
+    await stopped;
+  };
+  try {
+    await waitFor(name, url, () => exited);
+  } catch (error) {
+    await stop();
+    throw error;
+  }
+  return stop;
 }
 
 async function main(): Promise<number> {
@@ -66,33 +88,33 @@ async function main(): Promise<number> {
     PORT: port,
     DEFAULT_USER_EMAIL: user.email,
     DEFAULT_USER_PASSWORD: user.password,
-    AUTH_ALLOWED_ORIGINS: 'http://localhost:3000',
+    AUTH_ALLOWED_ORIGINS: frontUrl,
   };
+  // The front gets its port only, never the API secrets read from apps/api/.env.
+  const frontEnv = { PATH: process.env.PATH, HOME: process.env.HOME, PORT: frontPort, NEXT_TELEMETRY_DISABLED: '1' };
 
   if ((await run('bun', ['run', 'build'], api, apiEnv)) !== 0) return 1;
   if ((await run('node', ['dist/database/migrate.js', 'run'], api, apiEnv)) !== 0) return 1;
+  if ((await run('bun', ['run', 'build'], front, frontEnv)) !== 0) return 1;
 
-  const server = spawn('node', ['dist/main.js'], { cwd: api, env: apiEnv, stdio: 'inherit' });
-  let exited = false;
-  server.on('close', () => (exited = true));
+  const stops: (() => Promise<unknown>)[] = [];
   try {
-    await waitFor(apiUrl, () => exited);
-    // Scenarios get the API address and the test account only, never database settings.
+    stops.push(await start('API', 'node', ['dist/main.js'], api, apiEnv, apiUrl));
+    stops.push(await start('front', 'node_modules/.bin/next', ['start'], front, frontEnv, frontUrl));
+    // Scenarios get the API and front addresses and the test account only, never database settings.
     // Playwright supports Node only; Node 24 runs the TypeScript steps natively.
     // Extra arguments go to Cucumber, e.g. `bun run test:e2e --order random:42`.
     return await run('node', [cucumber, '--config', 'cucumber.mjs', ...process.argv.slice(2)], import.meta.dirname, {
       PATH: process.env.PATH,
       HOME: process.env.HOME,
       E2E_API_URL: apiUrl,
+      E2E_FRONT_URL: frontUrl,
+      HEADED: process.env.HEADED,
       E2E_USER_EMAIL: user.email,
       E2E_USER_PASSWORD: user.password,
     });
   } finally {
-    if (!exited) {
-      const stopped = new Promise((done) => server.on('close', done));
-      server.kill('SIGTERM');
-      await stopped;
-    }
+    await Promise.all(stops.map((stop) => stop()));
     await deleteUser(apiEnv);
   }
 }
