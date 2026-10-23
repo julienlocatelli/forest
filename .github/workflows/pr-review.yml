@@ -52,6 +52,7 @@ jobs:
 
             - Fixed point: `origin/main`.
             - Spec: the Go Forest story in `${{ env.SPEC_FILE }}`. It is the spec the skill would otherwise look for; ignore the skill's mention of `docs/agents/issue-tracker.md`.
+            - If that file starts with `Spec unavailable:`, there is no story: skip the Spec sub-agent, still run the Standards review, and make the `## Spec` section say the spec axis was skipped, quoting the reason from the file.
             - Change no file in the repository.
 
             Write the skill's final report, in Markdown, to `${{ env.REVIEW_FILE }}`: a `## Standards` section, a `## Spec` section, and the one-line summary.

@@ -80,21 +80,32 @@ describe('storySpec', () => {
     });
   });
 
-  test('fails when the TASK number matches no story', async () => {
+  test('marks the spec unavailable for a branch without a TASK number, without calling Notion', async () => {
+    const { calls, fetcher } = fakeNotion([story]);
+
+    expect(await storySpec('renovate/bun-1.x', 'token', fetcher)).toEqual({
+      ok: false,
+      markdown:
+        'Spec unavailable: branch "renovate/bun-1.x" has no TASK number (expected <type>/<TASK>-<slug>), so it has no Go Forest story.\n',
+    });
+    expect(calls).toEqual([]);
+  });
+
+  test('marks the spec unavailable when the TASK number matches no story', async () => {
     const { fetcher } = fakeNotion([]);
 
     expect(await storySpec('chore/999-unknown', 'token', fetcher)).toEqual({
       ok: false,
-      markdown: 'Expected one Go Forest story with TASK-999, found 0.',
+      markdown: 'Spec unavailable: expected one Go Forest story with TASK-999, found 0.\n',
     });
   });
 
-  test('fails with the Notion error when Notion refuses the request', async () => {
+  test('marks the spec unavailable with the Notion error when Notion refuses the request', async () => {
     const fetcher = (async () => new Response('{"code":"unauthorized"}', { status: 401 })) as unknown as typeof fetch;
 
     const spec = await storySpec('chore/26-claude-pr-review', 'token', fetcher);
 
     expect(spec.ok).toBe(false);
-    expect(spec.markdown).toContain('Notion refused POST');
+    expect(spec.markdown).toStartWith('Spec unavailable: Notion refused POST');
   });
 });

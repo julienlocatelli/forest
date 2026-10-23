@@ -28,7 +28,7 @@ The `checks` job is a required status check on `main`: a pull request whose chec
 Claude runs the repository's `code-review` skill against `origin/main`, on two axes:
 
 - **Standards**: the repository's documented standards, plus the skill's code smell baseline.
-- **Spec**: the Go Forest story found from the branch's TASK number, `<type>/<TASK>-<slug>`. `.github/scripts/story-spec.ts` reads it from Notion with `NOTION_TOKEN` and writes it to a file for the review.
+- **Spec**: the Go Forest story found from the branch's TASK number, `<type>/<TASK>-<slug>`. `.github/scripts/story-spec.ts` reads it from Notion with `NOTION_TOKEN` and writes it to a file for the review. When there is no story to read, for example on a branch without a TASK number, the comment still gives the standards review and says why the spec axis was skipped.
 
 The review is posted as one pull request comment, starting with `<!-- claude-pr-review -->`. A new review updates that comment instead of adding another.
 
