@@ -1,0 +1,47 @@
+name: PR checks
+
+# Runs the repository checks on every pull request into main.
+# The `checks` job is a required status check on main: a failing or unfinished run blocks the merge.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push replaces the run still going on the same pull request.
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    # No secret and no database: end-to-end scenarios stay local.
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          install_args: bun node
+      # Install scripts only download the Playwright browsers (test-e2e's postinstall), which the checks don't need.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Generate the Prisma client
+        run: bun run --cwd apps/api prisma:generate
+      - name: API lint
+        run: bun run --cwd apps/api lint
+      - name: API unit tests
+        run: bun run --cwd apps/api test
+      - name: Front lint
+        run: bun run --cwd apps/front lint
+      - name: Front build
+        run: bun run --cwd apps/front build
+      - name: Unused code (knip)
+        run: bun run knip
+      - name: Gherkin lint
+        run: bun run lint:gherkin
+      - name: Script tests
+        run: bun run test:scripts
