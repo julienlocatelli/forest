@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { storyDone, taskFromBranch } from './story-done.ts';
+import { taskFromBranch } from './notion.ts';
+import { storyDone } from './story-done.ts';
 
 type Call = { method: string; url: string; body: unknown };
 
