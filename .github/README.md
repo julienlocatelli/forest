@@ -1,5 +1,26 @@
 # GitHub automation
 
+## PR checks
+
+`workflows/pr-checks.yml` runs the repository checks on every pull request into `main`: when it is opened, pushed to, reopened or marked ready for review. A new push cancels the run still going on the same pull request. The job needs no secret and touches no database, so end-to-end scenarios stay local.
+
+Each check is its own step, named in the run:
+
+| Step | Command |
+| --- | --- |
+| Generate the Prisma client | `bun run --cwd apps/api prisma:generate` |
+| API lint | `bun run --cwd apps/api lint` |
+| API unit tests | `bun run --cwd apps/api test` |
+| Front lint | `bun run --cwd apps/front lint` |
+| Front build | `bun run --cwd apps/front build` |
+| Unused code (knip) | `bun run knip` |
+| Gherkin lint | `bun run lint:gherkin` |
+| Script tests | `bun run test:scripts` |
+
+Run the same commands from the repository root to check a branch before pushing. Dependencies are installed with `bun install --frozen-lockfile --ignore-scripts`, which skips downloading the Playwright browsers the checks don't need.
+
+The `checks` job is a required status check on `main`: a pull request whose checks failed or have not finished cannot be merged. Repository admins can still bypass it from the merge button.
+
 ## Story done on merge
 
 `workflows/story-done-on-merge.yml` moves a Go Forest story to `Done 🙌` when its pull request is merged into `main`. It reads the story number from the branch name, `<type>/<TASK>-<slug>`, and writes what it did to the job summary. A pull request closed without merging moves nothing.
