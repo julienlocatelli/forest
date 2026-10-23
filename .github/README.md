@@ -21,6 +21,26 @@ Run the same commands from the repository root to check a branch before pushing.
 
 The `checks` job is a required status check on `main`: a pull request whose checks failed or have not finished cannot be merged. Repository admins can still bypass it from the merge button.
 
+## PR review
+
+`workflows/pr-review.yml` has Claude review a pull request into `main` when it is opened ready for review or marked ready for review. It does not run on drafts or on later pushes; to review again, turn the pull request back to draft and mark it ready.
+
+Claude runs the repository's `code-review` skill against `origin/main`, on two axes:
+
+- **Standards**: the repository's documented standards, plus the skill's code smell baseline.
+- **Spec**: the Go Forest story found from the branch's TASK number, `<type>/<TASK>-<slug>`. `.github/scripts/story-spec.ts` reads it from Notion with `NOTION_TOKEN` and writes it to a file for the review.
+
+The review is posted as one pull request comment, starting with `<!-- claude-pr-review -->`. A new review updates that comment instead of adding another.
+
+The review never blocks merging: it is not a required check, so a failed review job does not prevent merging. Pull requests from forks get no secrets, so their review fails without blocking them.
+
+### Set up the Claude token
+
+1. On a machine where Claude Code is signed in to your Claude subscription, run `claude setup-token` and copy the token it prints.
+2. In GitHub, open **Settings → Secrets and variables → Actions** for this repository and add a repository secret named `CLAUDE_CODE_OAUTH_TOKEN` with that token.
+
+Reviews then use that subscription. The token lives only in that secret: never write it in the repository.
+
 ## Story done on merge
 
 `workflows/story-done-on-merge.yml` moves a Go Forest story to `Done 🙌` when its pull request is merged into `main`. It reads the story number from the branch name, `<type>/<TASK>-<slug>`, and writes what it did to the job summary. A pull request closed without merging moves nothing.

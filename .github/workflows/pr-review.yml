@@ -1,0 +1,74 @@
+name: PR review
+
+# Claude reviews a pull request into main with the code-review skill, on two axes:
+# the repository's standards, and the Go Forest story found from the branch's TASK number.
+# It posts one comment, updated on each review. It never blocks merging: it is not a required check.
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    env:
+      SPEC_FILE: ${{ runner.temp }}/story-spec.md
+      REVIEW_FILE: ${{ runner.temp }}/review.md
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The review diffs the branch against origin/main.
+          fetch-depth: 0
+      - uses: jdx/mise-action@v2
+        with:
+          install_args: bun
+      - name: Read the story from Notion
+        # The branch goes through the environment, never into the shell command.
+        env:
+          BRANCH: ${{ github.head_ref }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: bun .github/scripts/story-spec.ts "$SPEC_FILE"
+      - name: Review with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          claude_args: >-
+            --allowedTools "Read,Glob,Grep,Task,Write,Bash(git diff:*),Bash(git log:*),Bash(git rev-parse:*),Bash(git show:*)"
+          prompt: |
+            Review this pull request with the repository's `code-review` skill. Do not ask questions: decide alone.
+
+            - Fixed point: `origin/main`.
+            - Spec: the Go Forest story in `${{ env.SPEC_FILE }}`. It is the spec the skill would otherwise look for; ignore the skill's mention of `docs/agents/issue-tracker.md`.
+            - Change no file in the repository.
+
+            Write the skill's final report, in Markdown, to `${{ env.REVIEW_FILE }}`: a `## Standards` section, a `## Spec` section, and the one-line summary.
+      - name: Post the review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker='<!-- claude-pr-review -->'
+          body_file="$RUNNER_TEMP/comment.md"
+          printf '%s\n# Claude review\n\n' "$marker" > "$body_file"
+          cat "$REVIEW_FILE" >> "$body_file"
+          # One comment per pull request: update the marked one, or create it.
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$marker\")) | .id] | first // empty")
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@"$body_file" > /dev/null
+            echo "Updated comment $id."
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@"$body_file" > /dev/null
+            echo 'Created the review comment.'
+          fi
