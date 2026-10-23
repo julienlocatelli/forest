@@ -1,11 +1,11 @@
 ---
 name: pull-request
-description: Publish a validated Forest story (Go Forest TASK-<n>): squash its work into one commit with the TASK number in the Conventional Commit scope, push its branch, and create or update a draft GitHub pull request linked to the story.
+description: Publish a validated Forest story (Go Forest TASK-<n>): squash its work into one commit with the TASK number in the Conventional Commit scope, push its branch, and create or update a GitHub pull request linked to the story, ready for review.
 ---
 
 # Pull request for a Forest story
 
-Invoke directly with a Go Forest story reference, `TASK-<n>` or `<n>`, after successful validation. Backlog tickets (`BLF-<n>`) are not accepted: branches and pull requests always come from a story. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub draft PR. A request to edit this skill does not execute those actions. No merge, release, deployment or edits to other tickets are authorized, and no force-push without the user's explicit approval.
+Invoke directly with a Go Forest story reference, `TASK-<n>` or `<n>`, after successful validation. Backlog tickets (`BLF-<n>`) are not accepted: branches and pull requests always come from a story. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub PR. A request to edit this skill does not execute those actions. No merge, release, deployment or edits to other tickets are authorized, and no force-push without the user's explicit approval.
 
 ## Verify context and scope
 
@@ -36,7 +36,7 @@ Include the canonical story URL in the commit body. Additional body text may exp
 
 1. Use an authenticated GitHub connector or gh CLI, verifying repository and head/base from actual metadata. Read the existing [PR body skill](../pr/SKILL.md) and any repository PR template; honor the repository template when present and use the skill's structure otherwise. Include a visible story reference such as `[Notion TASK-16](<canonical URL>)`, the acceptance-criteria evidence when `/implement` provides it, concrete behavior, checks actually executed and material limitations. No GitHub closing keyword for a Notion number.
 2. Push the ticket branch normally to the verified remote and confirm the push succeeded before any PR step. Do not push main or rewrite remote history except the approved squash above. If the remote branch diverges or the push is rejected, stop and report the conflict; never create or update the PR from a stale remote branch. Publication must concern only the verified story commits; unexpected independent commits require resolution.
-3. Search for a PR with this repository/head/base. If absent, create a draft PR; if present, update its description with the final scope and evidence, preserving unrelated human content and its existing draft/ready state. Use structured tool arguments or a temporary body file with gh --body-file, preserving literal text and newlines. Never open a duplicate PR after an uncertain response: re-read remote state first.
+3. Search for a PR with this repository/head/base. If absent, create it ready for review, not as a draft, unless the user accepted to publish with a limitation (an unproven criterion, a failing or unavailable check): then create it as a draft, and state the limitation and why it is a draft at the top of its body. If present, update its description with the final scope and evidence, preserving unrelated human content and its existing draft or ready state. Use structured tool arguments or a temporary body file with gh --body-file, preserving literal text and newlines. Never open a duplicate PR after an uncertain response: re-read remote state first.
 4. Verify the PR URL, head SHA and base. Report CI as observed (queued/running/passed/failed), without presenting pending jobs as successful. An authenticated remote unavailable or publication failure leaves the local commit intact for retry; no automatic reset or duplicate commit.
 
-Report the commits (SHA and subject), canonical story link, remote branch, PR URL/state, validation and any blocker. Do not change the story's status; `/implement` moves it to `Review`, and a PR does not imply merge or Done.
+Report the commits (SHA and subject), canonical story link, remote branch, PR URL and state (ready for review or draft, with the limitation that made it a draft), validation and any blocker. Do not change the story's status; `/implement` moves it to `Review`, and a PR does not imply merge or Done.

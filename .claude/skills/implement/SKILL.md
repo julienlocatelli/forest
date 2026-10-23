@@ -93,4 +93,4 @@ When every task is `Done`, fetch the story again and check each acceptance crite
 
 ### 7. Report
 
-Give the user the branch, the slice commits (SHA and subject), the PR URL and state, and the story link with its status.
+Give the user the branch, the slice commits (SHA and subject), the PR URL and whether it is ready for review or a draft (with the accepted limitation), and the story link with its status.
