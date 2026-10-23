@@ -20,9 +20,10 @@ jobs:
   review:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    # Outside the checkout, so the review changes no file in the repository.
     env:
-      SPEC_FILE: ${{ runner.temp }}/story-spec.md
-      REVIEW_FILE: ${{ runner.temp }}/review.md
+      SPEC_FILE: /tmp/pr-review/story-spec.md
+      REVIEW_FILE: /tmp/pr-review/review.md
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,7 +37,9 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: bun .github/scripts/story-spec.ts "$SPEC_FILE"
+        run: |
+          mkdir -p "$(dirname "$SPEC_FILE")"
+          bun .github/scripts/story-spec.ts "$SPEC_FILE"
       - name: Review with Claude
         uses: anthropics/claude-code-action@v1
         with:
