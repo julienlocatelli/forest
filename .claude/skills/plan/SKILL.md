@@ -44,9 +44,13 @@ Follow [references/slicing.md](references/slicing.md):
 
 1. Split the story into vertical slices, each named as a user-visible outcome and tied to the acceptance criteria it proves. Order them so the first slice delivers the most value.
 2. List each slice's technical tasks, after reading the code they touch.
-3. Label any horizontal slice as spike, foundation or reusable component, and write one sentence on why it cannot be vertical.
-4. Fill [templates/board.md](templates/board.md): one row per task, numbered from 1 across the whole board, the slice in every row, every status `To Do`.
-5. Write the board to `<scratchpad>/<n>-board.md` and run `bun run lint:story <scratchpad>/<n>-board.md` until it passes.
+3. For a Gherkin story, find the steps that need a definition:
+   1. Write the story's Gherkin block to `<scratchpad>/<n>.feature`, never to `features/`: planning changes no repository file.
+   2. Run `bun run test:e2e:steps <scratchpad>/<n>.feature`. It starts no server and lists each step that no definition in `test-e2e/` matches, with the scenarios using it; it exits 1 when it lists any.
+   3. Add one `Define step "<step text>"` task per listed step to the first slice whose scenarios use it, before that slice's code tasks.
+4. Label any horizontal slice as spike, foundation or reusable component, and write one sentence on why it cannot be vertical.
+5. Fill [templates/board.md](templates/board.md): one row per task, numbered from 1 across the whole board, the slice in every row, every status `To Do`.
+6. Write the board to `<scratchpad>/<n>-board.md` and run `bun run lint:story <scratchpad>/<n>-board.md` until it passes.
 
 ### 3. Review with the user
 

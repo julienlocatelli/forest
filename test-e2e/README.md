@@ -33,3 +33,13 @@ A failed scenario that opened a front page saves a full-page screenshot to `test
 - Step definitions live in `steps/`, the Cucumber World and hooks in `support/`.
 - API steps reach the API over HTTP only, through `this.api`.
 - Browser steps drive the front through `this.page`, a Playwright page opened in a fresh browser context for each scenario.
+
+## Find steps without a definition
+
+```sh
+bun run test:e2e:steps [feature files…]
+```
+
+Lists every step of the given feature files, or of `features/` by default, that no step definition in `steps/` matches, with the scenarios using it. It is a Cucumber dry run: it starts no API, front or browser and touches no database, so it takes a second. It exits 1 when a step has no definition.
+
+`/plan` runs it on a draft of a Gherkin story's scenarios, kept outside the repository, and adds one `Define step` task per missing step to the story's board.

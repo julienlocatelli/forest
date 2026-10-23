@@ -50,8 +50,15 @@ Take slices in board order, starting at the slice of the first task not `Done`; 
 
 1. Set the slice's tasks to `Doing` on the board. Edit only the `Status` cell of each row, with `update_content` on that row's exact text from the latest fetch.
 2. Do the tasks. For application code (`apps/`), follow the [tdd](../tdd/SKILL.md) skill. For skills, docs and tooling, verify with the repository checks that apply: `bun run lint:story` on changed Markdown, `bun run knip`, and the existing tests of what you touched (`apps/api`: `bun run test`, `bun run lint`; `apps/front`: `bun run lint`, `bun run build`).
+
+   For a slice of a Gherkin story, work in this order, before any other code of the slice:
+
+   1. Write the slice's scenarios, copied from the story, to `features/<feature-name>.feature`, where `<feature-name>` is the kebab-case of the `Feature:` name. Update the matching file when it exists; create it otherwise. Run `bun run lint:gherkin` on it.
+   2. Define the missing steps from the slice's `Define step` tasks in `test-e2e/steps/`, then run `bun run test:e2e:steps` on the file: every step must have a definition.
+   3. Run `bun run test:e2e` and check that the slice's scenarios fail: they prove the behaviour is not there yet. A scenario that already passes proves nothing; report it.
+   4. Write the slice's code, then run `bun run test:e2e` again: the slice's scenarios and every other feature pass.
 3. Show the user the demonstrable result of the slice, the checks run with their outcome, and the diff summary. Wait for approval; apply requested changes and show again.
-4. On approval, set the slice's tasks to `Done` on the board, then commit the slice alone:
+4. On approval, set the slice's tasks to `Done` on the board, then commit the slice alone. A slice of a Gherkin story is `Done` only when the last `bun run test:e2e` of that slice passes its scenarios; otherwise it stays `Doing` (see below):
 
    ```text
    <type>(<n>): <summary of the slice, imperative, 4–5 words max>
@@ -74,7 +81,7 @@ Stop the run instead of working around it: no skipped check, no disabled test, n
 
 When every task is `Done`, fetch the story again and check each acceptance criterion against the branch:
 
-- Find concrete evidence: a check or test output, a file and line, or an observed run. A Gherkin scenario is proven only by a passing test that covers it.
+- Find concrete evidence: a check or test output, a file and line, or an observed run. A Gherkin scenario is proven only by its own passing scenario in `bun run test:e2e`: cite the feature file, the scenario name and the run summary, and pass them to `/pull-request` for the PR evidence. Code review, unit tests or a manual run never prove a Gherkin scenario.
 - Show the user every criterion with its evidence, or `not proven`.
 - Tick each proven checklist item on the story page, changing only `- [ ]` to `- [x]` on that line's exact text. Gherkin scenarios have no checkbox; their evidence goes in the PR.
 - Any unproven criterion stops the run before the pull request: report it, and leave the story in `Doing`.
