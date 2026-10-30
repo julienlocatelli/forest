@@ -9,6 +9,7 @@
 <Why this story exists and what the current problem is, in 2–5 lines. No technical solution.>
 
 - Source ticket: [<BLF-id>](<backlog ticket url>)
+- Investigations: <one link per Investigation section the story relies on, named "<BLF-id> investigation YYYY-MM-DD: <its question>" and pointing to the ticket, or "none">
 - Related stories: <TASK-xx links, or "none">
 
 ## Acceptance criteria
