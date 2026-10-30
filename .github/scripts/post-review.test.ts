@@ -122,7 +122,9 @@ describe('postReview', () => {
 
     const deletes = writes().filter((call) => call.method === 'DELETE');
     expect(deletes.map((call) => call.path)).toEqual(['/repos/owner/forest/pulls/comments/21']);
-    expect(writes()[0].method).toBe('DELETE');
+    // The new review and summary go first, so a run cancelled by a newer push never leaves the pull request without one.
+    expect(writes().at(-1)?.method).toBe('DELETE');
+    expect(writes().slice(0, -1).map((call) => call.method)).not.toContain('DELETE');
   });
 
   test('does not repeat a finding on a line whose previous thread got a reply, and lists it in the summary', async () => {

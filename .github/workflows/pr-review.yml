@@ -3,21 +3,22 @@ name: PR review
 # Claude reviews a pull request into main with the code-review skill, on two axes:
 # the repository's standards, and the Go Forest story found from the branch's TASK number.
 # It posts inline comments on the diff lines, plus one summary comment updated on each review.
+# It runs again on every push, so the last commit is always the one reviewed.
 # It never blocks merging: it is not a required check.
 on:
   pull_request:
-    types: [opened, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review]
     branches: [main]
 
 permissions:
   contents: read
   pull-requests: write
 
-# A new review waits for the running one instead of cancelling it, so a review is never cut off
-# between deleting the previous inline comments and posting its own.
+# A newer push cancels the review still running: it reviews an older commit. post-review.ts posts the new
+# review before deleting the previous one, so a cancelled run never leaves the pull request without a review.
 concurrency:
   group: pr-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   review:

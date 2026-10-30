@@ -97,16 +97,12 @@ export async function postReview(review: Review, { repo, pr, token, fetcher = fe
   const log: string[] = [];
   const base = `/repos/${repo}`;
 
-  // Replace the previous inline comments, except the threads someone replied to.
+  // The previous inline comments are replaced, except the threads someone replied to. They are read now and
+  // deleted last, so a run cancelled by a newer push leaves at worst both reviews, never none.
   const previous = await all<Comment>(fetcher, token, `${base}/pulls/${pr}/comments`);
   const replied = new Set(previous.map((comment) => comment.in_reply_to_id).filter((id) => id !== undefined));
   const ours = previous.filter((comment) => comment.body.startsWith(INLINE) && comment.in_reply_to_id === undefined);
   const kept = new Set(ours.filter((comment) => replied.has(comment.id)).map((comment) => `${comment.path}:${comment.line}`));
-  for (const comment of ours)
-    if (!replied.has(comment.id)) {
-      await github(fetcher, token, 'DELETE', `${base}/pulls/comments/${comment.id}`);
-      log.push(`Deleted inline comment ${comment.id}.`);
-    }
 
   // GitHub refuses a review whose comment targets a line outside the diff: those findings go to the summary,
   // like those on a line whose kept thread already discusses it, so the review repeats nothing.
@@ -171,6 +167,12 @@ export async function postReview(review: Review, { repo, pr, token, fetcher = fe
     await github(fetcher, token, 'POST', `${base}/issues/${pr}/comments`, { body });
     log.push('Created the summary comment.');
   }
+
+  for (const comment of ours)
+    if (!replied.has(comment.id)) {
+      await github(fetcher, token, 'DELETE', `${base}/pulls/comments/${comment.id}`);
+      log.push(`Deleted inline comment ${comment.id}.`);
+    }
   return log;
 }
 
