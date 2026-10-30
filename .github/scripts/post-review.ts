@@ -18,12 +18,16 @@ export interface Review {
   summary: string;
   // The findings that point at one changed line of the diff.
   inline: Finding[];
+  // How many findings, inline or not, ask for a change to the pull request.
+  open?: number;
 }
 
 interface Options {
   repo: string;
   pr: number;
   token: string;
+  // The reviewed commit, named on the summary's last line.
+  sha?: string;
   fetcher?: Fetch;
 }
 
@@ -93,20 +97,16 @@ async function all<T>(fetcher: Fetch, token: string, path: string): Promise<T[]>
   }
 }
 
-export async function postReview(review: Review, { repo, pr, token, fetcher = fetch }: Options): Promise<string[]> {
+export async function postReview(review: Review, { repo, pr, token, sha = 'unknown', fetcher = fetch }: Options): Promise<string[]> {
   const log: string[] = [];
   const base = `/repos/${repo}`;
 
-  // Replace the previous inline comments, except the threads someone replied to.
+  // The previous inline comments are replaced, except the threads someone replied to. They are read now and
+  // deleted last, so a run cancelled by a newer push leaves at worst both reviews, never none.
   const previous = await all<Comment>(fetcher, token, `${base}/pulls/${pr}/comments`);
   const replied = new Set(previous.map((comment) => comment.in_reply_to_id).filter((id) => id !== undefined));
   const ours = previous.filter((comment) => comment.body.startsWith(INLINE) && comment.in_reply_to_id === undefined);
   const kept = new Set(ours.filter((comment) => replied.has(comment.id)).map((comment) => `${comment.path}:${comment.line}`));
-  for (const comment of ours)
-    if (!replied.has(comment.id)) {
-      await github(fetcher, token, 'DELETE', `${base}/pulls/comments/${comment.id}`);
-      log.push(`Deleted inline comment ${comment.id}.`);
-    }
 
   // GitHub refuses a review whose comment targets a line outside the diff: those findings go to the summary,
   // like those on a line whose kept thread already discusses it, so the review repeats nothing.
@@ -159,7 +159,9 @@ export async function postReview(review: Review, { repo, pr, token, fetcher = fe
     ...section('Findings on lines already discussed', discussed),
   ];
   const count = posted ? `${inlineCount(posted)} on the diff.` : 'No inline comment on the diff.';
-  const body = [SUMMARY, '# Claude review', '', review.summary.trim(), '', ...outside, count].join('\n');
+  // The last line is fixed so a script can read it: `Open findings: <n|unknown> on <sha>`.
+  const open = `Open findings: ${Number.isInteger(review.open) ? review.open : 'unknown'} on ${sha}`;
+  const body = [SUMMARY, '# Claude review', '', review.summary.trim(), '', ...outside, count, '', open].join('\n');
 
   // One summary comment per pull request: update the marked one, or create it.
   const comments = await all<Comment>(fetcher, token, `${base}/issues/${pr}/comments`);
@@ -171,6 +173,12 @@ export async function postReview(review: Review, { repo, pr, token, fetcher = fe
     await github(fetcher, token, 'POST', `${base}/issues/${pr}/comments`, { body });
     log.push('Created the summary comment.');
   }
+
+  for (const comment of ours)
+    if (!replied.has(comment.id)) {
+      await github(fetcher, token, 'DELETE', `${base}/pulls/comments/${comment.id}`);
+      log.push(`Deleted inline comment ${comment.id}.`);
+    }
   return log;
 }
 
@@ -182,6 +190,7 @@ async function main() {
     repo: process.env.REPO ?? '',
     pr: Number(process.env.PR),
     token: process.env.GITHUB_TOKEN ?? '',
+    sha: process.env.HEAD_SHA,
   });
   console.log(log.join('\n'));
 }

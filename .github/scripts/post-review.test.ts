@@ -89,6 +89,8 @@ describe('postReview', () => {
         '- **Spec** `src/a.ts:40`: This line is not in the diff.',
         '',
         '1 inline comment on the diff.',
+        '',
+        'Open findings: unknown on unknown',
       ].join('\n'),
     );
   });
@@ -122,7 +124,9 @@ describe('postReview', () => {
 
     const deletes = writes().filter((call) => call.method === 'DELETE');
     expect(deletes.map((call) => call.path)).toEqual(['/repos/owner/forest/pulls/comments/21']);
-    expect(writes()[0].method).toBe('DELETE');
+    // The new review and summary go first, so a run cancelled by a newer push never leaves the pull request without one.
+    expect(writes().at(-1)?.method).toBe('DELETE');
+    expect(writes().slice(0, -1).map((call) => call.method)).not.toContain('DELETE');
   });
 
   test('does not repeat a finding on a line whose previous thread got a reply, and lists it in the summary', async () => {
@@ -192,7 +196,23 @@ describe('postReview', () => {
     await postReview({ summary: '## Standards\n\nNone.', inline: [] }, { ...options, fetcher });
 
     expect(writes().map((call) => `${call.method} ${call.path}`)).toEqual(['POST /repos/owner/forest/issues/14/comments']);
-    expect((writes()[0].body as { body: string }).body).toEndWith('No inline comment on the diff.');
+    expect((writes()[0].body as { body: string }).body).toContain('\nNo inline comment on the diff.\n');
+  });
+
+  test('ends the summary with the open findings on the reviewed commit, in one fixed line', async () => {
+    const { fetcher, writes } = fakeGitHub({ files });
+
+    await postReview({ summary: '## Standards\n\nTwo issues.', inline: [], open: 2 }, { ...options, sha: 'abc1234def', fetcher });
+
+    expect((writes()[0].body as { body: string }).body).toEndWith('\nOpen findings: 2 on abc1234def');
+  });
+
+  test('says the open findings are unknown when the review gives no count', async () => {
+    const { fetcher, writes } = fakeGitHub({ files });
+
+    await postReview({ summary: '## Standards\n\nNone.', inline: [] }, { ...options, sha: 'abc1234def', fetcher });
+
+    expect((writes()[0].body as { body: string }).body).toEndWith('\nOpen findings: unknown on abc1234def');
   });
 
   test('still updates the summary, with the inline findings and the reason, when GitHub refuses the review', async () => {
