@@ -2,7 +2,8 @@
 
 export type Fetch = typeof fetch;
 
-// Sends `body` as JSON and returns the JSON answer; a refused request throws with the service's status and message.
+// Sends `body` as JSON and returns the JSON answer, or undefined for an empty one such as a 204;
+// a refused request throws with the service's status and message.
 export async function requestJson(
   fetcher: Fetch,
   service: string,
@@ -18,5 +19,6 @@ export async function requestJson(
   });
   const path = new URL(url).pathname.replace(/^\/v1/, '');
   if (!response.ok) throw new Error(`${service} refused ${method} ${path}: ${response.status} ${await response.text()}`);
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : undefined;
 }
