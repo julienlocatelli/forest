@@ -19,6 +19,8 @@ Each check is its own step, named in the run:
 
 Run the same commands from the repository root to check a branch before pushing. Dependencies are installed with `bun install --frozen-lockfile --ignore-scripts`, which skips downloading the Playwright browsers the checks don't need.
 
+Before pushing a workflow change, also run `mise exec -- actionlint` from the repository root: it lints every file in `.github/workflows/` with the `actionlint` version pinned in `mise.toml`. The checks don't run it.
+
 The `checks` job is a required status check on `main`: a pull request whose checks failed or have not finished cannot be merged. The branch must also be up to date with `main` (strict status checks), so `checks` ran on what `main` will hold after the merge. Repository admins can still bypass it from the merge button.
 
 ## PR review
