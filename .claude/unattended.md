@@ -6,8 +6,8 @@
 
 In an unattended run:
 
-- **Nobody answers.** Never call `AskUserQuestion` and never wait for an approval. Where a step would ask the user or show something for approval, take the option the step recommends, or the first option it would offer, and go on.
-- **Log every choice.** For each choice the user would have made, append one line to the decision log, `$(git rev-parse --git-common-dir)/forest-unattended/TASK-<n>.md`, creating the folder when needed: `- <skill>, <step>: <choice>. <reason>.` The log lives in Git's own directory, so it is never committed; `/pull-request` copies it into the PR body.
+- **Nobody answers.** Never call `AskUserQuestion` and never wait for an approval. Where a step would ask the user or show something for approval, take the option the step recommends and go on. When it recommends none, take the option that keeps everything as it is, or block.
+- **Log every choice.** For each choice the user would have made, append one line to the decision log, `$(git rev-parse --git-common-dir)/forest-unattended/TASK-<n>.md`, creating the folder when needed: `- <skill>, <step>: <choice>. <reason>.` The log lives in Git's own directory, so it is never committed, and only runs in the same clone share it; `/pull-request` copies it into the PR body.
 - **Stay reversible.** An action a step reserves for the user's explicit approval, such as dropping a `Doing` or `Done` task, a force-push or a deletion, is never taken: pick the option that keeps everything, or block.
 
 ## Blocked
@@ -21,7 +21,7 @@ A story is blocked when a step would otherwise stop and wait for the user:
 
 Then:
 
-1. Leave every task and the story's status where they are, and commit nothing unfinished.
+1. Leave every task and the story's status where they are: `To Define` or `To Do` during `/plan`, `Doing` during `/implement`, `Review` or `Doing` during `/pull-request`. Commit nothing unfinished.
 2. Append a `## Blocked YYYY-MM-DD` section at the end of the story page, with today's date: the skill and step, what failed with the check output or the reason, and what would unblock it.
 3. End the run with the result line.
 
