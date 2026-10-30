@@ -16,6 +16,7 @@ Turn one specified story into task cards that `/implement` can work through. The
 | --- | --- |
 | Stories data source (Go Forest) | `collection://e3ef2fdf-b522-4b2a-9e07-e875c6249370` |
 | Story ID property | `TASK` (`auto_increment_id`) |
+| Story branch property | `Branch` (text): the story's Git branch, `<type>/<TASK>-<slug>` |
 | Story statuses used here | `To Define` → `To Do`; any other status is kept |
 | Tasks data source | `collection://00acae14-4586-4de8-a850-ae10a94683f3` |
 | Task properties | `Name` (title: the task), `#` (number), `Slice` (text), `Status` (status), `Story` (relation to the story page) |
@@ -54,24 +55,27 @@ Follow [references/slicing.md](references/slicing.md):
 4. Label any horizontal slice as spike, foundation or reusable component, and write one sentence on why it cannot be vertical.
 5. Fill [templates/board.md](templates/board.md), the review draft of the cards: one row per task, numbered from 1 across the whole board, the slice in every row, every status `To Do`. Each row becomes one Tasks entry when published.
 6. Write the board to `<scratchpad>/<n>-board.md` and run `bun run lint:story <scratchpad>/<n>-board.md` until it passes.
+7. Draft the story's branch, `<type>/<n>-<slug>`: a type from [git-ticket-branch](../git-ticket-branch/SKILL.md) (`feature`, `fix`, `chore`, `docs`…) that matches the work, and a 1–4 word slug from the title, in lowercase ASCII words joined by hyphens. When the story already has a `Branch`, keep it.
 
 ### 3. Review with the user
 
-Show the full board, the justification of any horizontal slice, and the dependencies between slices. Apply requested changes, relint, and show again. Publish nothing without explicit approval.
+Show the full board, the branch, the justification of any horizontal slice, and the dependencies between slices. The user approves the board and the branch together. Apply requested changes, relint, and show again. Publish nothing without explicit approval.
+
+Planning creates no Git branch: `/implement` creates it, with the name set here.
 
 ### 4. Publish
 
 1. Create one Tasks entry per board row, in one call: `Name` the task, `#` its number, `Slice` its slice, `Status` `To Do`, `Story` the story URL. Change nothing in the story page's content.
-2. If the story is `To Define`, set it to `To Do`. Keep any other status: a story in `Doing` stays in `Doing`.
-3. Read the story's tasks again and check their count, numbers, slices and statuses against the board, and the story's status. After an uncertain or failed write, read them before retrying so you don't duplicate tasks.
+2. Set the story's `Branch` to the approved branch, unless it already has one. If the story is `To Define`, set it to `To Do` in the same update. Keep any other status: a story in `Doing` stays in `Doing`.
+3. Read the story's tasks again and check their count, numbers, slices and statuses against the board, and fetch the story to check its `Branch` and status. After an uncertain or failed write, read them before retrying so you don't duplicate tasks.
 
 ### Re-plan a planned story
 
-1. Show the story's existing tasks first, ordered by `#`, with each task's status, and ask whether to **replace** them or **add tasks** to them.
+1. Show the story's existing tasks first, ordered by `#`, with each task's status, and its `Branch`, and ask whether to **replace** them or **add tasks** to them. A re-plan keeps the `Branch`: never rename it.
 2. **Add tasks:** draft only the new tasks, numbered after the last existing one, with status `To Do`, and create only those entries. Existing tasks stay as they are.
 3. **Replace:** draft a new board, then carry over every task in `Doing` or `Done` with its status, renumbered in board order. Never drop a `Doing` or `Done` task without the user's explicit approval.
 4. Before publishing, show which existing tasks are kept, changed or removed. Publish by updating the kept and changed entries (`#`, `Slice`, `Name`), creating the new ones and moving the removed ones to the trash.
 
 ### 5. Report
 
-Give the user the story link, its status, and the number of slices and tasks. Nothing else follows: implementation is `/implement TASK-<n>`.
+Give the user the story link, its status, its branch, and the number of slices and tasks. Nothing else follows: implementation is `/implement TASK-<n>`.

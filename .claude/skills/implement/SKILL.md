@@ -16,6 +16,7 @@ This is the only phase that changes repository files. Stay inside the story's sc
 | --- | --- |
 | Stories data source (Go Forest) | `collection://e3ef2fdf-b522-4b2a-9e07-e875c6249370` |
 | Story ID property | `TASK` (`auto_increment_id`) |
+| Story branch property | `Branch` (text): the story's Git branch, `<type>/<TASK>-<slug>`, set by `/plan` |
 | Story statuses used here | `To Do` → `Doing` → `Review` |
 | Tasks data source | `collection://00acae14-4586-4de8-a850-ae10a94683f3` |
 | Task properties | `Name` (title: the task), `#` (number), `Slice` (text), `Status` (status), `Story` (relation to the story page) |
@@ -42,8 +43,8 @@ If a fetch shows a schema or option name different from this table, stop and tel
 
 ### 2. Prepare the branch and start
 
-1. Read the story's `Branch:` line in its Context when present. Otherwise propose `<type>/<n>-<slug>`: a 1–4 word slug from the title, and a type from [git-ticket-branch](../git-ticket-branch/SKILL.md) (`feature`, `fix`, `chore`, `docs`…). Confirm the type and name with the user.
-2. Run the `git-ticket-branch` helper as that skill describes, with the story's page UUID and `--ticket <n>`. A nonzero exit stops the run.
+1. Read the story's `Branch` property. When it is set, `/plan` already agreed it with the user: use it without asking. It must read `<type>/<n>-<slug>` with this story's TASK number; otherwise report it and stop. When it is empty, as for a story planned before `Branch` existed, propose `<type>/<n>-<slug>`: a 1–4 word slug from the title, and a type from [git-ticket-branch](../git-ticket-branch/SKILL.md) (`feature`, `fix`, `chore`, `docs`…), and confirm the type and name with the user.
+2. Run the `git-ticket-branch` helper as that skill describes, with the story's page UUID, `--ticket <n>`, and the branch split into `--type <type> --description <slug>`. A nonzero exit stops the run.
 3. If the story is `To Do`, set it to `Doing` and verify by fetching.
 
 ### 3. Implement slice by slice
