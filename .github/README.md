@@ -19,11 +19,11 @@ Each check is its own step, named in the run:
 
 Run the same commands from the repository root to check a branch before pushing. Dependencies are installed with `bun install --frozen-lockfile --ignore-scripts`, which skips downloading the Playwright browsers the checks don't need.
 
-The `checks` job is a required status check on `main`: a pull request whose checks failed or have not finished cannot be merged. Repository admins can still bypass it from the merge button.
+The `checks` job is a required status check on `main`: a pull request whose checks failed or have not finished cannot be merged. The branch must also be up to date with `main` (strict status checks), so `checks` ran on what `main` will hold after the merge. Repository admins can still bypass it from the merge button.
 
 ## PR review
 
-`workflows/pr-review.yml` has Claude review a pull request into `main` when it is opened ready for review or marked ready for review. It does not run on drafts or on later pushes; to review again, turn the pull request back to draft and mark it ready.
+`workflows/pr-review.yml` has Claude review a pull request into `main` when it is opened, reopened or marked ready for review, and again on every push to it, so the last commit is always the one reviewed. It does not run on drafts. A newer push cancels a review still running on an older commit.
 
 Claude runs the repository's `code-review` skill against `origin/main`, on two axes:
 
@@ -34,8 +34,8 @@ Claude writes the review as JSON, and `.github/scripts/post-review.ts` publishes
 
 - Findings that point at a changed line are posted as inline comments on that line, grouped in one GitHub review of type "Comment", which never approves nor requests changes. Claude quotes the line's code: when the line number is wrong, the comment moves to the only diff line holding that code, if the code is at least 10 characters long; otherwise the finding moves to the summary rather than land on a guessed line.
 - The other findings, and the number of inline comments, go in one summary comment starting with `<!-- claude-pr-review -->`. A new review updates that comment instead of adding another.
-- A new review waits for a running one on the same pull request instead of cancelling it.
-- Before posting, a new review deletes the inline comments of previous reviews that nobody replied to. Threads with a reply are kept, and a new finding on the same line goes to the summary instead of repeating the thread.
+- After posting its own review and summary, a new review deletes the inline comments of previous reviews that nobody replied to. Posting first means a review cancelled by a newer push never leaves the pull request without one. Threads with a reply are kept, and a new finding on the same line goes to the summary instead of repeating the thread.
+- The summary ends with one fixed line, `Open findings: <n> on <commit SHA>`: how many findings, inline or not, ask for a change on that commit, or `unknown` when the review gave no count. A judgement call the review accepts, or a criterion the diff cannot show, is not counted. Scripts read this line to know whether a pull request is clean.
 
 The review never blocks merging: it is not a required check, so a failed review job does not prevent merging. Pull requests from forks get no secrets, so their review fails without blocking them.
 
