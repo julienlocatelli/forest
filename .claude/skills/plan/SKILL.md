@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Split a specified Forest story (TASK-<n>) from the Go Forest board into vertical slices and technical tasks, published as cards on the story's Kanban board (the Tasks database). Use when the user runs /plan TASK-<n>.
-argument-hint: TASK-<n>
+argument-hint: TASK-<n> [--unattended]
 ---
 
 # Plan
@@ -25,6 +25,14 @@ Turn one specified story into task cards that `/implement` can work through. The
 | Story's tasks | Fetch the story page; under `# To Do` take the linked `<database>` whose `data-source-url` is the Tasks data source, fetch it, and query its board view in `view` mode. The view returns only this story's tasks, sorted by `#`, and costs no `rows`/SQL query allowance |
 
 If a fetch shows a schema or option name different from this table, stop and tell the user instead of guessing.
+
+## Unattended run
+
+With `--unattended`, follow [unattended.md](../../unattended.md) through every step below. In this skill that means:
+
+- Step 3 shows nothing and waits for nobody: publish the drafted board and branch, and log the branch and the number of slices and tasks.
+- A story that already has tasks is not re-planned: log it, publish nothing and report `planned`.
+- A story without acceptance criteria or without a `# To Do` section is blocked. Its `## Blocked YYYY-MM-DD` section is the one change an unattended run makes to the story page's content.
 
 ## Workflow
 
@@ -70,4 +78,4 @@ Planning creates no Git branch: `/implement` creates it, with the name set here.
 
 ### 5. Report
 
-Give the user the story link, its status, its branch, and the number of slices and tasks. Nothing else follows: implementation is `/implement TASK-<n>`.
+Give the user the story link, its status, its branch, and the number of slices and tasks. Nothing else follows: implementation is `/implement TASK-<n>`. An unattended run ends with its result line.

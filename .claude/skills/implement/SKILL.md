@@ -1,7 +1,7 @@
 ---
 name: implement
 description: Implement a planned Forest story (TASK-<n>) from the Go Forest board, one vertical slice at a time, moving its task cards on the story's Kanban board and committing each approved slice. Use when the user runs /implement TASK-<n>.
-argument-hint: TASK-<n>
+argument-hint: TASK-<n> [--unattended]
 ---
 
 # Implement
@@ -24,6 +24,16 @@ This is the only phase that changes repository files. Stay inside the story's sc
 | Story's tasks | Fetch the story page; under `# To Do` take the linked `<database>` whose `data-source-url` is the Tasks data source, fetch it, and query its board view in `view` mode. The view returns only this story's tasks, sorted by `#`, and costs no `rows`/SQL query allowance |
 
 If a fetch shows a schema or option name different from this table, stop and tell the user instead of guessing.
+
+## Unattended run
+
+With `--unattended`, follow [unattended.md](../../unattended.md) through every step below. In this skill that means:
+
+- An empty `Branch` takes the proposed branch, logged.
+- Step 3.3 shows nothing and waits for nobody: once the slice's checks pass, step 3.4 runs as if approved.
+- A missing or useless task (step 4) is added or trashed as proposed, logged.
+- What would stop the run and wait, a failing check, a scope change (step 4) or an unproven criterion (step 5), blocks the story instead.
+- Step 6 runs `/pull-request TASK-<n> --unattended`.
 
 ## Workflow
 
@@ -88,4 +98,4 @@ When every task is `Done`, fetch the story again and check each acceptance crite
 
 ### 7. Report
 
-Give the user the branch, the slice commits (SHA and subject), the PR URL and whether it is ready for review or a draft (with the accepted limitation), and the story link with its status.
+Give the user the branch, the slice commits (SHA and subject), the PR URL and whether it is ready for review or a draft (with the accepted limitation), and the story link with its status. An unattended run ends with its result line.
