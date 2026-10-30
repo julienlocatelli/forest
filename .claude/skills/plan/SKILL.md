@@ -15,6 +15,7 @@ Turn one specified story into task cards that `/implement` can work through. The
 | What | Value |
 | --- | --- |
 | Stories data source (Go Forest) | `collection://e3ef2fdf-b522-4b2a-9e07-e875c6249370` |
+| Stories view | Go Forest "Board View" in [notion-views.md](../../notion-views.md) |
 | Story ID property | `TASK` (`auto_increment_id`) |
 | Story branch property | `Branch` (text): the story's Git branch, `<type>/<TASK>-<slug>` |
 | Story statuses used here | `To Define` → `To Do`; any other status is kept |
@@ -31,15 +32,7 @@ If a fetch shows a schema or option name different from this table, stop and tel
 ### 1. Resolve the story
 
 1. Validate the argument matches `TASK-<n>` or `<n>`. Otherwise ask for it.
-2. Query the stories data source in `rows` mode with this filter. Exactly one match is required; otherwise report it and stop without changing anything.
-
-   ```json
-   {"type": "group", "operator": "and", "filters": [
-     {"type": "property", "property": "TASK", "propertyType": "auto_increment_id",
-      "operator": "number_equals", "value": {"type": "exact", "value": <n>}}
-   ]}
-   ```
-
+2. Find the row whose `TASK` is `<n>` in the stories view, as [notion-views.md](../../notion-views.md) describes. Exactly one match is required; otherwise report it and stop without changing anything.
 3. Fetch the page in full. It must have acceptance criteria and a `# To Do` section. Read the story's tasks (see Notion targets). Existing tasks mean a re-plan: follow [Re-plan a planned story](#re-plan-a-planned-story) alongside the steps below. A Markdown table under `# To Do` means the story was planned before the Tasks database: report it and stop.
 
 ### 2. Draft the plan
