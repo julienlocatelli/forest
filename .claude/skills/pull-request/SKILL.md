@@ -1,11 +1,21 @@
 ---
 name: pull-request
 description: Publish a validated Forest story (Go Forest TASK-<n>): squash its work into one commit with the TASK number in the Conventional Commit scope, push its branch, and create or update a GitHub pull request linked to the story, ready for review.
+argument-hint: TASK-<n> [--unattended]
 ---
 
 # Pull request for a Forest story
 
 Invoke directly with a Go Forest story reference, `TASK-<n>` or `<n>`, after successful validation. Backlog tickets (`BLF-<n>`) are not accepted: branches and pull requests always come from a story. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub PR. A request to edit this skill does not execute those actions. No merge, release, deployment or edits to other tickets are authorized, and no force-push without the user's explicit approval.
+
+## Unattended run
+
+With `--unattended`, follow [unattended.md](../../unattended.md) through every step below. In this skill that means:
+
+- The PR body gets an `## Unattended decisions` section, after Evidence, holding the decision log's lines as they are, or "none" when the log is missing or empty.
+- A limitation that would need the user's acceptance, such as an unproven criterion or a failing check, blocks the story: no draft pull request.
+- A branch already pushed is never rewritten: new work goes in as one extra commit.
+- What needs the user's decision, such as a story number that differs from the branch, blocks the story.
 
 ## Verify context and scope
 
@@ -39,4 +49,4 @@ Include the canonical story URL in the commit body. Additional body text may exp
 3. Search for a PR with this repository/head/base. If absent, create it ready for review, not as a draft, unless the user accepted to publish with a limitation (an unproven criterion, a failing or unavailable check): then create it as a draft, and state the limitation and why it is a draft at the top of its body. If present, update its description with the final scope and evidence, preserving unrelated human content and its existing draft or ready state. Use structured tool arguments or a temporary body file with gh --body-file, preserving literal text and newlines. Never open a duplicate PR after an uncertain response: re-read remote state first.
 4. Verify the PR URL, head SHA and base. Report CI as observed (queued/running/passed/failed), without presenting pending jobs as successful. An authenticated remote unavailable or publication failure leaves the local commit intact for retry; no automatic reset or duplicate commit.
 
-Report the commits (SHA and subject), canonical story link, remote branch, PR URL and state (ready for review or draft, with the limitation that made it a draft), validation and any blocker. Do not change the story's status; `/implement` moves it to `Review`, and a PR does not imply merge or Done.
+Report the commits (SHA and subject), canonical story link, remote branch, PR URL and state (ready for review or draft, with the limitation that made it a draft), validation and any blocker. Do not change the story's status; `/implement` moves it to `Review`, and a PR does not imply merge or Done. An unattended run ends with its result line.
