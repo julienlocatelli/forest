@@ -32,7 +32,7 @@ With `--unattended`, follow [unattended.md](../../unattended.md) through every s
 
 - Step 3 shows nothing and waits for nobody: publish the drafted board and branch, and log the branch and the number of slices and tasks.
 - A story that already has tasks is not re-planned: log it, publish nothing and report `planned`.
-- A story without acceptance criteria or without a `# To Do` section is blocked.
+- A story without acceptance criteria or without a `# To Do` section is blocked. Its `## Blocked` section is the one change an unattended run makes to the story page's content.
 
 ## Workflow
 

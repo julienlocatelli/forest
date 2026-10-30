@@ -12,7 +12,7 @@ Invoke directly with a Go Forest story reference, `TASK-<n>` or `<n>`, after suc
 
 With `--unattended`, follow [unattended.md](../../unattended.md) through every step below. In this skill that means:
 
-- The PR body gets an `## Unattended decisions` section, after the Evidence section of the [PR body skill](../pr/SKILL.md), holding the decision log's lines as they are, or "none" when the log is missing or empty.
+- The PR body gets an `## Unattended decisions` section, after the Evidence section of the [PR body skill](../pr/SKILL.md), holding the decision log's lines as they are: "none" when the log exists and is empty, and "log not found" when the file is missing, so a log lost between clones shows.
 - A limitation that would need the user's acceptance, such as an unproven criterion or a failing check, blocks the story: no draft pull request.
 - A branch already pushed is never rewritten: as "One commit per PR" below says for a rewrite nobody approved, new work goes in as one extra commit.
 - What needs the user's decision, such as a story number that differs from the branch, blocks the story.
