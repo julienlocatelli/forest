@@ -80,3 +80,21 @@ BRANCH=chore/20-done-on-merge NOTION_TOKEN=<API token> bun .github/scripts/story
 ```sh
 bun run test:scripts
 ```
+
+## Dependency updates
+
+[Renovate](https://docs.renovatebot.com/) opens a pull request whenever a dependency has a newer version. It runs as the hosted Mend Renovate GitHub App, and its configuration is `renovate.json` at the repository root. It updates:
+
+- the bun packages of every workspace (root, `apps/api`, `apps/front`, `test-e2e`), with `bun.lock` updated in the same pull request;
+- the tools pinned in `mise.toml`;
+- the GitHub Actions used in `.github/workflows`, pinned to a commit SHA with the version as a comment.
+
+Every update keeps an exact version (`rangeStrategy: pin`), so the ranges still in `apps/front/package.json` become exact versions too. Commits and pull request titles start with `chore(deps):`. Pull requests open ready for review, so the PR checks and the Claude review run on them like on any other. Renovate never merges and never enables auto-merge: the update-check skill verifies and merges its pull requests. The **Dependency Dashboard** issue lists every pending and open update.
+
+### Install the Renovate app
+
+Done once by the repository owner, in a browser:
+
+1. Open <https://github.com/apps/renovate> and select **Install** (or **Configure** if it is already installed on the account).
+2. Choose **Only select repositories**, pick `forest`, and confirm.
+3. Renovate reads `renovate.json`, reports any configuration error in the Dependency Dashboard issue, and opens its first pull requests within about an hour.
