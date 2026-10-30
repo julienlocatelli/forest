@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Forest dependency updates. Renovate opens pull requests only; the update-check skill verifies and merges them.",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScope(deps)"
+  ],
+  "enabledManagers": ["bun", "mise", "github-actions"],
+  "rangeStrategy": "pin",
+  "automerge": false,
+  "platformAutomerge": false,
+  "draftPR": false,
+  "dependencyDashboard": true
+}
