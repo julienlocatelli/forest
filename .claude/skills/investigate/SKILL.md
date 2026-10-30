@@ -16,7 +16,7 @@ Answer one question with evidence, before any story exists. The output is knowle
 | --- | --- |
 | Backlog data source | `collection://3f574e46-26fd-80e3-812c-000b05e1a1cc` |
 | Backlog ID column | `""` (unnamed, integer, displayed as `BLF-<n>`) |
-| Backlog view | `view://3f574e46-26fd-8024-971a-000cba530a11` ("Board view", unfiltered: every ticket) |
+| Backlog view | Backlog "Board view" in [notion-views.md](../../notion-views.md) |
 | Backlog tags | `Tags` (multi-select); `Investigated` marks a ticket with at least one `Investigation` section |
 
 If a fetch shows a schema different from this table, stop and tell the user instead of guessing.
@@ -27,7 +27,7 @@ If a fetch shows a schema different from this table, stop and tell the user inst
 
 1. The argument is a free-text question or a backlog ticket `BLF-<n>`. Without one, ask for it.
 2. For `BLF-<n>`, read the ticket:
-   1. Query the backlog view in `view` mode, following `next_cursor` while `has_more` is true, and take the row whose `""` column is `<n>`. Exactly one match is required; otherwise report it and stop. View mode costs no `rows`/SQL query allowance, which the workspace can run out of.
+   1. Find the row whose `""` column is `<n>` in the backlog view, as [notion-views.md](../../notion-views.md) describes. Exactly one match is required; otherwise report it and stop.
    2. Fetch the page in full. Its title and content become the question; when they hold no answerable question, ask the user what to investigate about the ticket.
 3. Record `git status --short` and the current branch, to check them at the end.
 
