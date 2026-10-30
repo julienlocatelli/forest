@@ -1,6 +1,6 @@
 # Unattended runs
 
-`/plan`, `/implement` and `/pull-request` run unattended when `--unattended` follows the story reference, for example `/plan TASK-31 --unattended`. The development loop uses it; without the flag, each skill asks and waits as its own steps say.
+`/plan`, `/implement` and `/pull-request` run unattended when `--unattended` follows the story reference, for example `/plan TASK-31 --unattended`; `/merge-story`, the flow's last step, always does. The development loop uses it; without the flag, each skill asks and waits as its own steps say.
 
 ## Rules
 
@@ -21,7 +21,7 @@ A story is blocked when a step would otherwise stop and wait for the user:
 
 Then:
 
-1. Leave every task and the story's status where they are: `To Define` or `To Do` during `/plan`, `Doing` during `/implement` and `/pull-request`, since `/implement` moves the story to `Review` only once the pull request is verified. Commit nothing unfinished.
+1. Leave every task and the story's status where they are: `To Define` or `To Do` during `/plan`, `Doing` during `/implement` and `/pull-request`, since `/implement` moves the story to `Review` only once the pull request is verified, and `Review` during `/merge-story`. Commit nothing unfinished.
 2. Append a `## Blocked YYYY-MM-DD` section at the end of the story page, with today's date: the skill and step, what failed with the check output or the reason, and what would unblock it.
 3. End the run with the result line.
 
@@ -31,4 +31,5 @@ The last line of an unattended run's final message is exactly one of:
 
 - `UNATTENDED RESULT: planned TASK-<n>` when `/plan` published the board;
 - `UNATTENDED RESULT: pr TASK-<n> <pull request URL>` when `/implement` or `/pull-request` left a ready pull request;
+- `UNATTENDED RESULT: merged TASK-<n> <pull request URL>` when `/merge-story` merged the pull request;
 - `UNATTENDED RESULT: blocked TASK-<n> <one-line reason>` when the story is blocked.

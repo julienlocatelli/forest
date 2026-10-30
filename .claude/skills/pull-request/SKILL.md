@@ -6,7 +6,7 @@ argument-hint: TASK-<n> [--unattended]
 
 # Pull request for a Forest story
 
-Invoke directly with a Go Forest story reference, `TASK-<n>` or `<n>`, after successful validation. Backlog tickets (`BLF-<n>`) are not accepted: branches and pull requests always come from a story. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub PR. A request to edit this skill does not execute those actions. No merge, release, deployment or edits to other tickets are authorized, and no force-push without the user's explicit approval.
+Invoke directly with a Go Forest story reference, `TASK-<n>` or `<n>`, after successful validation. Backlog tickets (`BLF-<n>`) are not accepted: branches and pull requests always come from a story. Invocation authorizes intentional staging, a local commit, normal push of the ticket branch and creation/update of its GitHub PR. A request to edit this skill does not execute those actions. No merge, release, deployment or edits to other tickets are authorized, and no force-push without the user's explicit approval. Merging is the unattended flow's own last step, [merge-story](../merge-story/SKILL.md): this skill never merges, with or without `--unattended`.
 
 ## Unattended run
 
