@@ -45,3 +45,5 @@ jobs:
         run: bun run lint:gherkin
       - name: Script tests
         run: bun run test:scripts
+      - name: Always fail
+        run: exit 1
