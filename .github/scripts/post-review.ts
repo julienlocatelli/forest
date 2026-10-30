@@ -160,7 +160,7 @@ export async function postReview(review: Review, { repo, pr, token, sha = 'unkno
   ];
   const count = posted ? `${inlineCount(posted)} on the diff.` : 'No inline comment on the diff.';
   // The last line is fixed so a script can read it: `Open findings: <n|unknown> on <sha>`.
-  const open = `Open findings: ${Number.isInteger(review.open) ? review.open : 'unknown'} on ${sha}`;
+  const open = `Open findings: ${Number.isInteger(review.open) && review.open! >= 0 ? review.open : 'unknown'} on ${sha}`;
   const body = [SUMMARY, '# Claude review', '', review.summary.trim(), '', ...outside, count, '', open].join('\n');
 
   // One summary comment per pull request: update the marked one, or create it.

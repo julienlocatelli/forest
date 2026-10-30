@@ -215,6 +215,14 @@ describe('postReview', () => {
     expect((writes()[0].body as { body: string }).body).toEndWith('\nOpen findings: unknown on abc1234def');
   });
 
+  test('says the open findings are unknown for a negative count', async () => {
+    const { fetcher, writes } = fakeGitHub({ files });
+
+    await postReview({ summary: '## Standards\n\nNone.', inline: [], open: -1 }, { ...options, sha: 'abc1234def', fetcher });
+
+    expect((writes()[0].body as { body: string }).body).toEndWith('\nOpen findings: unknown on abc1234def');
+  });
+
   test('still updates the summary, with the inline findings and the reason, when GitHub refuses the review', async () => {
     const calls: string[] = [];
     const fetcher = (async (url: string, init: RequestInit = {}) => {
