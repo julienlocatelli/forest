@@ -64,6 +64,7 @@ jobs:
             ```json
             {
               "summary": "Markdown: a `## Standards` section and a `## Spec` section with the findings that point at no changed line, then the skill's one-line summary",
+              "open": 0,
               "inline": [
                 { "path": "path/from/the/repository/root", "line": 42, "code": "the exact text of that line", "axis": "Standards", "body": "Markdown finding" }
               ]
@@ -72,9 +73,11 @@ jobs:
 
             - Put a finding in `inline` when it points at one line that the pull request adds or changes: `line` is that line's number in the new version of the file, `code` is that line's exact text copied from the file, `axis` is `Standards` or `Spec`. Do not repeat it in `summary`.
             - Every other finding goes in `summary`, under its axis.
+            - `open` counts the findings, inline or in `summary`, that ask for a change to the pull request. A judgement call you accept as it is, or a criterion the diff cannot show, is not an open finding.
       - name: Post the review
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: bun .github/scripts/post-review.ts "$REVIEW_FILE"

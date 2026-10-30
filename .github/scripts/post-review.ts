@@ -18,12 +18,16 @@ export interface Review {
   summary: string;
   // The findings that point at one changed line of the diff.
   inline: Finding[];
+  // How many findings, inline or not, ask for a change to the pull request.
+  open?: number;
 }
 
 interface Options {
   repo: string;
   pr: number;
   token: string;
+  // The reviewed commit, named on the summary's last line.
+  sha?: string;
   fetcher?: Fetch;
 }
 
@@ -93,7 +97,7 @@ async function all<T>(fetcher: Fetch, token: string, path: string): Promise<T[]>
   }
 }
 
-export async function postReview(review: Review, { repo, pr, token, fetcher = fetch }: Options): Promise<string[]> {
+export async function postReview(review: Review, { repo, pr, token, sha = 'unknown', fetcher = fetch }: Options): Promise<string[]> {
   const log: string[] = [];
   const base = `/repos/${repo}`;
 
@@ -155,7 +159,9 @@ export async function postReview(review: Review, { repo, pr, token, fetcher = fe
     ...section('Findings on lines already discussed', discussed),
   ];
   const count = posted ? `${inlineCount(posted)} on the diff.` : 'No inline comment on the diff.';
-  const body = [SUMMARY, '# Claude review', '', review.summary.trim(), '', ...outside, count].join('\n');
+  // The last line is fixed so a script can read it: `Open findings: <n|unknown> on <sha>`.
+  const open = `Open findings: ${Number.isInteger(review.open) ? review.open : 'unknown'} on ${sha}`;
+  const body = [SUMMARY, '# Claude review', '', review.summary.trim(), '', ...outside, count, '', open].join('\n');
 
   // One summary comment per pull request: update the marked one, or create it.
   const comments = await all<Comment>(fetcher, token, `${base}/issues/${pr}/comments`);
@@ -184,6 +190,7 @@ async function main() {
     repo: process.env.REPO ?? '',
     pr: Number(process.env.PR),
     token: process.env.GITHUB_TOKEN ?? '',
+    sha: process.env.HEAD_SHA,
   });
   console.log(log.join('\n'));
 }
