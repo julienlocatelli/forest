@@ -21,7 +21,7 @@ A story is blocked when a step would otherwise stop and wait for the user:
 
 Then:
 
-1. Leave every task and the story's status where they are: `To Define` or `To Do` during `/plan`, `Doing` during `/implement`, `Review` or `Doing` during `/pull-request`. Commit nothing unfinished.
+1. Leave every task and the story's status where they are: `To Define` or `To Do` during `/plan`, `Doing` during `/implement` and `/pull-request`, since `/implement` moves the story to `Review` only once the pull request is verified. Commit nothing unfinished.
 2. Append a `## Blocked YYYY-MM-DD` section at the end of the story page, with today's date: the skill and step, what failed with the check output or the reason, and what would unblock it.
 3. End the run with the result line.
 
