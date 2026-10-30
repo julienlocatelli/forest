@@ -20,5 +20,10 @@ export async function requestJson(
   const path = new URL(url).pathname.replace(/^\/v1/, '');
   if (!response.ok) throw new Error(`${service} refused ${method} ${path}: ${response.status} ${await response.text()}`);
   const text = await response.text();
-  return text ? JSON.parse(text) : undefined;
+  if (!text) return undefined;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`${service} answered ${method} ${path} with a body that is not JSON: ${text.slice(0, 200)}`);
+  }
 }
