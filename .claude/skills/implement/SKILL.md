@@ -14,7 +14,6 @@ This is the only phase that changes repository files. Stay inside the story's sc
 
 | What | Value |
 | --- | --- |
-| Stories data source (Go Forest) | `collection://e3ef2fdf-b522-4b2a-9e07-e875c6249370` |
 | Stories view | Go Forest "Board View" in [notion-views.md](../../notion-views.md) |
 | Story ID property | `TASK` (`auto_increment_id`) |
 | Story branch property | `Branch` (text): the story's Git branch, `<type>/<TASK>-<slug>`, set by `/plan` |
