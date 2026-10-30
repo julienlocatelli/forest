@@ -10,6 +10,8 @@ function fakeGitHub(state: { files?: unknown[]; reviewComments?: unknown[]; issu
     const method = init.method ?? 'GET';
     const path = url.replace('https://api.github.com', '');
     calls.push({ method, path, body: init.body ? JSON.parse(String(init.body)) : undefined });
+    // Like GitHub, a DELETE answers 204 with an empty body.
+    if (method === 'DELETE') return new Response(null, { status: 204 });
     if (method !== 'GET') return Response.json({ id: 1 });
     const page = Number(new URL(url).searchParams.get('page') ?? '1');
     const list = path.includes('/files')
