@@ -18,10 +18,7 @@
     {
       "description": "Prisma's CLI, client and adapters must move to one version together.",
       "groupName": "prisma",
-      "matchPackageNames": [
-        "prisma",
-        "@prisma/**"
-      ]
+      "matchPackageNames": ["prisma", "@prisma/**"]
     }
   ]
 }
