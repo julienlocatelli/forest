@@ -8,11 +8,7 @@
     ":semanticCommitTypeAll(chore)",
     ":semanticCommitScope(deps)"
   ],
-  "enabledManagers": [
-    "bun",
-    "mise",
-    "github-actions"
-  ],
+  "enabledManagers": ["bun", "mise", "github-actions"],
   "rangeStrategy": "pin",
   "automerge": false,
   "platformAutomerge": false,
