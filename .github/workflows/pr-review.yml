@@ -29,11 +29,11 @@ jobs:
       SPEC_FILE: /tmp/pr-review/story-spec.md
       REVIEW_FILE: /tmp/pr-review/review.json
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # The review diffs the branch against origin/main.
           fetch-depth: 0
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@c37c93293d6b742fc901e1406b8f764f6fb19dac # v2.4.4
         with:
           install_args: bun
       - name: Read the story from Notion
@@ -45,7 +45,7 @@ jobs:
           mkdir -p "$(dirname "$SPEC_FILE")"
           bun .github/scripts/story-spec.ts "$SPEC_FILE"
       - name: Review with Claude
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@d535f5172dec02b204866b393d6b20b9b2aaf98d # v1.0.266
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
