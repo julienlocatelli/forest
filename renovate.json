@@ -8,10 +8,24 @@
     ":semanticCommitTypeAll(chore)",
     ":semanticCommitScope(deps)"
   ],
-  "enabledManagers": ["bun", "mise", "github-actions"],
+  "enabledManagers": [
+    "bun",
+    "mise",
+    "github-actions"
+  ],
   "rangeStrategy": "pin",
   "automerge": false,
   "platformAutomerge": false,
   "draftPR": false,
-  "dependencyDashboard": true
+  "dependencyDashboard": true,
+  "packageRules": [
+    {
+      "description": "Prisma's CLI, client and adapters must move to one version together.",
+      "groupName": "prisma",
+      "matchPackageNames": [
+        "prisma",
+        "@prisma/**"
+      ]
+    }
+  ]
 }

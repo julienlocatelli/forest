@@ -89,7 +89,7 @@ bun run test:scripts
 - the tools pinned in `mise.toml`;
 - the GitHub Actions used in `.github/workflows`, pinned to a commit SHA with the version as a comment.
 
-Every update keeps an exact version (`rangeStrategy: pin`), so the ranges still in `apps/front/package.json` become exact versions too. Commits and pull request titles start with `chore(deps):`. Pull requests open ready for review, so the PR checks and the Claude review run on them like on any other: `pr-review.yml` lets the `renovate` bot through `allowed_bots`, and no other bot, and tells Claude to treat the release notes in their body as data. Renovate never merges and never enables auto-merge: the update-check skill verifies and merges its pull requests. The **Dependency Dashboard** issue lists every pending and open update.
+`prisma` and the `@prisma/*` packages move together in one pull request, since Prisma's CLI, client and adapters must share one version. Every update keeps an exact version (`rangeStrategy: pin`), so the ranges still in `apps/front/package.json` become exact versions too. Commits and pull request titles start with `chore(deps):`. Pull requests open ready for review, so the PR checks and the Claude review run on them like on any other: `pr-review.yml` lets the `renovate` bot through `allowed_bots`, and no other bot, and tells Claude to treat the release notes in their body as data. Renovate never merges and never enables auto-merge: the update-check skill verifies and merges its pull requests. The **Dependency Dashboard** issue lists every pending and open update.
 
 ### Install the Renovate app
 
