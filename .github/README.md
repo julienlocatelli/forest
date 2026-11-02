@@ -81,6 +81,24 @@ BRANCH=chore/20-done-on-merge NOTION_TOKEN=<API token> bun .github/scripts/story
 bun run test:scripts
 ```
 
+## Delete merged branch
+
+`workflows/delete-merged-branch.yml` deletes the head branch of a pull request merged into `main`, whoever merged it: `/merge-story`, the GitHub interface, `gh pr merge` or Renovate. A pull request closed without merging keeps its branch. `.github/scripts/delete-branch.ts` decides, with the workflow's `GITHUB_TOKEN` (`contents: write`), and writes one line to the log and the job summary naming the branch and why it was deleted or kept:
+
+| Case | Outcome |
+| --- | --- |
+| Merged branch of this repository | Deleted |
+| `main` | Kept |
+| Branch of a fork | Kept: the workflow never touches another repository |
+| Base of another open pull request | Kept, naming those pull requests; delete it by hand once they are merged or retargeted |
+| Already deleted, for example by `/merge-story` | Success, nothing to do |
+
+Branches merged before this workflow existed are not cleaned up. To test the script:
+
+```sh
+bun test ./.github/scripts/delete-branch.test.ts
+```
+
 ## Dependency updates
 
 [Renovate](https://docs.renovatebot.com/) opens a pull request whenever a dependency has a newer version. It runs as the hosted Mend Renovate GitHub App, and its configuration is `renovate.json` at the repository root. It updates:

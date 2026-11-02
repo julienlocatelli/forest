@@ -1,7 +1,7 @@
 // Publishes Claude's pull request review: inline comments on the diff, and one summary comment.
 // Usage: GITHUB_TOKEN=... REPO=<owner/name> PR=<number> bun .github/scripts/post-review.ts <review.json>
 import { readFileSync } from 'node:fs';
-import { type Fetch, requestJson } from './http.ts';
+import { type Fetch, github } from './http.ts';
 
 export interface Finding {
   path: string;
@@ -39,7 +39,6 @@ interface Comment {
   line?: number | null;
 }
 
-const GITHUB = 'https://api.github.com';
 // Marks the summary comment, so a new review updates it.
 const SUMMARY = '<!-- claude-pr-review -->';
 // Marks each inline comment, so a new review can replace them.
@@ -76,15 +75,6 @@ function placement(finding: Finding, lines: Map<number, string> | undefined): nu
 // "1 inline comment" or "N inline comments".
 function inlineCount(count: number): string {
   return count === 1 ? '1 inline comment' : `${count} inline comments`;
-}
-
-function github(fetcher: Fetch, token: string, method: string, path: string, body?: unknown) {
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  };
-  return requestJson(fetcher, 'GitHub', method, `${GITHUB}${path}`, headers, body);
 }
 
 // Reads every page of a GitHub list endpoint.
