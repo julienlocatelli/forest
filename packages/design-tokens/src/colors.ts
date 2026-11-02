@@ -59,6 +59,12 @@ export const contrastPairs: [ColorName, ColorName][] = [
   ['onDanger', 'danger'],
 ];
 
+// A non-text color, then the background it shows on: each pair must reach WCAG 1.4.11 (3:1) in every theme.
+export const nonTextContrastPairs: [ColorName, ColorName][] = [
+  ['focus', 'background'],
+  ['focus', 'surface'],
+];
+
 // WCAG 2 relative luminance of a `#rrggbb` color.
 function luminance(hex: string) {
   const [r, g, b] = [1, 3, 5].map((start) => {
