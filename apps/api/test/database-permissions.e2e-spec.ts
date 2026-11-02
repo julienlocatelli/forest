@@ -2,19 +2,21 @@ import pg from 'pg';
 import { databaseOptions } from '../src/database/database.config.js';
 import { runMigration } from '../src/database/migrate.js';
 describe('database authorization', () => {
-  it('allows Forest CRUD and denies schema, public and provider access', async () => {
+  it('allows Forest CRUD and denies schema changes and every other role', async () => {
     expect(await runMigration('run')).toBe(0);
     const migration = new pg.Pool(databaseOptions(process.env, 'migration'));
     const app = new pg.Pool(databaseOptions());
     let id: number | undefined;
     try {
-      expect(
-        (
-          await app.query(
-            'SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname=current_user',
-          )
-        ).rows[0],
-      ).toEqual({ rolsuper: false, rolbypassrls: false });
+      for (const pool of [app, migration]) {
+        expect(
+          (
+            await pool.query(
+              'SELECT rolsuper, rolcreaterole, rolbypassrls FROM pg_roles WHERE rolname=current_user',
+            )
+          ).rows[0],
+        ).toEqual({ rolsuper: false, rolcreaterole: false, rolbypassrls: false });
+      }
       expect(
         (
           await app.query(
@@ -29,47 +31,43 @@ describe('database authorization', () => {
           )
         ).rows[0].relrowsecurity,
       ).toBe(true);
-      for (const table of [
+      const runtime = (await app.query('SELECT current_user AS name')).rows[0]
+        .name as string;
+      const tables = [
         'public."user"',
         'public._prisma_migrations',
         'public.auth_identity',
         'public.auth_session',
         'public.auth_refresh_token',
         'public.auth_attempt',
-      ]) {
+      ];
+      for (const table of tables) {
         const grants = await migration.query(
           "SELECT count(*)::int AS count FROM pg_class c CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl,acldefault('r',c.relowner))) a WHERE c.oid=$1::regclass AND a.grantee=0",
           [table],
         );
         expect(grants.rows[0].count).toBe(0);
+        // Every role that can read or write the table, apart from the runtime role, the
+        // owner (the migration role) and administrators: superusers and the members of
+        // pg_read_all_data or pg_write_all_data, which the database provider manages.
+        const others = await migration.query(
+          `SELECT r.rolname FROM pg_roles r, pg_class c
+           WHERE c.oid=$1::regclass AND r.rolname NOT LIKE 'pg\\_%'
+             AND r.oid<>c.relowner AND r.rolname<>$2 AND NOT r.rolsuper
+             AND NOT pg_has_role(r.oid,'pg_read_all_data','USAGE')
+             AND NOT pg_has_role(r.oid,'pg_write_all_data','USAGE')
+             AND has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE')`,
+          [table, runtime],
+        );
+        expect(others.rows).toEqual([]);
       }
-      for (const role of ['anon', 'authenticated']) {
-        for (const table of [
-          'public."user"',
-          'public._prisma_migrations',
-          'public.auth_identity',
-          'public.auth_session',
-          'public.auth_refresh_token',
-          'public.auth_attempt',
-        ]) {
-          expect(
-            (
-              await migration.query(
-                "SELECT has_table_privilege($1,$2,'SELECT') AS read, has_table_privilege($1,$2,'INSERT') AS write",
-                [role, table],
-              )
-            ).rows[0],
-          ).toEqual({ read: false, write: false });
-        }
-        expect(
-          (
-            await migration.query(
-              "SELECT has_sequence_privilege($1,'public.user_id_seq','USAGE') AS allowed",
-              [role],
-            )
-          ).rows[0].allowed,
-        ).toBe(false);
-      }
+      expect(
+        (
+          await migration.query(
+            "SELECT count(*)::int AS count FROM aclexplode((SELECT COALESCE(relacl,acldefault('S',relowner)) FROM pg_class WHERE oid='public.user_id_seq'::regclass)) WHERE grantee=0",
+          )
+        ).rows[0].count,
+      ).toBe(0);
       expect(
         (
           await app.query(
@@ -116,15 +114,6 @@ describe('database authorization', () => {
             )
           ).rows[0],
         ).toEqual({ read: true, write: true });
-      }
-      for (const schema of ['auth', 'storage']) {
-        const result = await app.query(
-          "SELECT has_table_privilege(current_user,c.oid,'SELECT') AS allowed FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relkind='r'",
-          [schema],
-        );
-        expect(result.rows.every((r: { allowed: boolean }) => !r.allowed)).toBe(
-          true,
-        );
       }
     } finally {
       try {

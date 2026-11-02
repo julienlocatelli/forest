@@ -7,7 +7,8 @@ traiter ce point dans une feature dédiée.
 
 ## Environnements et accès
 
-Créer un projet Supabase pour l'application et un autre projet dédié aux tests.
+Créer un projet Supabase pour l'application. Les tests utilisent un projet Neon dédié,
+décrit dans [Base de test Neon](#base-de-test-neon).
 Activer SSL enforcement dans les réglages de base de données. Dans Connect, copier
 une connexion directe si IPv6 disponible ou Session pooler IPv4 sur port 5432.
 Ne pas recomposer l'hôte. Pour un rôle personnalisé via pooler, utiliser
@@ -19,7 +20,7 @@ utiliser rejectUnauthorized=false.
 
 ## Provisionnement initial
 
-Dans chaque projet dédié, exécuter en administrateur privé les commandes suivantes.
+Dans le projet Supabase de l'application, exécuter en administrateur privé les commandes suivantes.
 Elles ne contiennent pas de secrets ; si un rôle existe déjà, examiner sa définition
 avant de poursuivre plutôt que de le remplacer silencieusement.
 
@@ -47,7 +48,64 @@ Ne pas inscrire les mots de passe dans un script versionné, une commande shell 
 avoir de grants sur auth/storage. Vérifier les grants hérités dans le projet ; les tests
 signalent toute permission excessive. Sur un projet uniquement utilisé par Forest,
 désactiver la Data API inutilisée. Sinon conserver ses réglages globaux : la migration
-révoque les droits anon/authenticated/PUBLIC sur les seuls objets Forest et active RLS.
+révoque les droits PUBLIC sur les seuls objets Forest et active RLS ; révoquer à la main
+les droits anon/authenticated de Supabase sur ces objets si la Data API reste active.
+
+## Base de test Neon
+
+Les suites `test:e2e` de l'API et les scénarios Cucumber utilisent un projet Neon
+réservé aux tests, distinct du projet de l'application et de la production. Une seule
+base suffit : `neondb` de la branche par défaut.
+
+1. Dans la console Neon, créer le projet, puis ouvrir **SQL Editor** sur la base `neondb`
+   avec le rôle propriétaire (`neondb_owner`). Les rôles créés en SQL ne reçoivent pas
+   `neon_superuser`, contrairement à ceux créés depuis la console.
+
+   ```sql
+   CREATE ROLE forest_migration LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+   CREATE ROLE forest_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
+   GRANT CONNECT ON DATABASE neondb TO forest_app, forest_migration;
+   REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+   GRANT USAGE, CREATE ON SCHEMA public TO forest_migration;
+   GRANT USAGE ON SCHEMA public TO forest_app;
+   ```
+
+2. Définir les mots de passe depuis `psql` connecté avec le rôle propriétaire. Neon
+   n'accepte que des mots de passe en clair : `\password` échoue, car il envoie un hash.
+   `\prompt` lit le mot de passe sans l'afficher ; `PSQL_HISTORY=/dev/null` évite de
+   l'écrire dans l'historique.
+
+   ```text
+   \prompt 'Mot de passe forest_migration : ' pw
+   ALTER ROLE forest_migration WITH PASSWORD :'pw';
+   \prompt 'Mot de passe forest_app : ' pw
+   ALTER ROLE forest_app WITH PASSWORD :'pw';
+   ```
+
+3. Dans **Connect**, copier deux URL de la même branche et les renseigner dans `.env`,
+   sans query parameters :
+   - `TEST_DATABASE_URL` : rôle `forest_app`, connexion poolée (hôte `ep-…-pooler`) ;
+   - `TEST_MIGRATION_DATABASE_URL` : rôle `forest_migration`, connexion directe (hôte
+     `ep-…` sans `-pooler`), que le CLI de migration exige.
+
+4. Après vérification du projet dans la console, définir `TEST_DATABASE_CONFIRM_ISOLATED=true`.
+
+Le garde-fou des tests identifie le projet par l'ID d'endpoint `ep-…` de l'hôte : les deux
+URL doivent le partager, il doit différer de `PRODUCTION_DATABASE_PROJECT_REF` et des URL
+de l'application, et une URL de test qui n'est pas un endpoint Neon est refusée.
+
+Aucun fichier CA n'est nécessaire : Neon présente un certificat d'une autorité publique,
+vérifié avec les racines du système par l'API et par le CLI de migration. Les tests
+ignorent `DATABASE_SSL_CA_PATH`, réservé à l'application ; `TEST_DATABASE_SSL_CA_PATH`
+fournit une CA aux tests si un projet de test en demande une.
+
+Neon suspend le calcul après 5 minutes d'inactivité. La première connexion le réveille
+en quelques secondes, dans le délai `DATABASE_CONNECT_TIMEOUT_MS` (10 s par défaut).
+
+Les rôles d'administration de Neon (`neondb_owner`, `neon_service`) lisent et écrivent
+toutes les tables via `pg_read_all_data` et `pg_write_all_data` ; les tests de permissions
+les excluent, comme les superutilisateurs, et vérifient qu'aucun autre rôle que le runtime
+et le propriétaire des tables (le rôle de migration) n'accède aux tables Forest.
 
 ## Installation et configuration
 
@@ -88,10 +146,9 @@ bun run test:e2e
 ```
 
 test:e2e compile l'application pour préserver les métadonnées NestJS puis charge .env.
-Renseigner TEST_DATABASE_URL et TEST_MIGRATION_DATABASE_URL avec le même projet isolé,
-distinct des URLs applicatives. Fournir la référence de production via
+Renseigner les variables `TEST_*` avec le projet Neon de test (voir
+[Base de test Neon](#base-de-test-neon)). Fournir la référence de production via
 PRODUCTION_DATABASE_PROJECT_REF (ou none si aucun projet de production n'existe).
-Après confirmation du projet dans le Dashboard, définir TEST_DATABASE_CONFIRM_ISOLATED=true.
 Sans cette garde, les suites refusent de démarrer. Elles exécutent les migrations et
 créent/nettoient uniquement leurs propres fiches. Aucune lecture de la base locale.
 Les suites vérifient CRUD, persistance après redémarrage, migrations répétées et permissions.
