@@ -3,6 +3,9 @@
   "tags": [
     "-lintignore"
   ],
+  "ignoreBinaries": [
+    "openssl"
+  ],
   "workspaces": {
     ".": {
       "entry": [

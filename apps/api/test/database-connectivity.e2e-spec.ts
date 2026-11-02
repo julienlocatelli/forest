@@ -1,17 +1,14 @@
+import { execFileSync } from 'node:child_process';
 import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { databaseOptions } from '../src/database/database.config.js';
 import { runMigration } from '../src/database/migrate.js';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { vi } from 'vitest';
 describe('separate runtime and CLI connectivity', () => {
   beforeAll(async () => {
     expect(await runMigration('run')).toBe(0);
   });
-  it('connects with the configured verified certificate and closes resources', async () => {
+  it('connects with a certificate verified by the system roots and closes resources', async () => {
     const client = new PrismaClient({
       adapter: new PrismaPg(databaseOptions()),
     });
@@ -23,33 +20,46 @@ describe('separate runtime and CLI connectivity', () => {
       await client.$disconnect();
     }
   });
-  it('rejects an invalid CA in both paths without printing credentials', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'forest-invalid-ca-'));
-    const ca = join(dir, 'invalid.pem');
-    writeFileSync(
-      ca,
-      '-----BEGIN CERTIFICATE-----\ninvalid\n-----END CERTIFICATE-----',
+  it('refuses a server certificate it cannot verify without leaking credentials', async () => {
+    // A well-formed CA that signed nothing: the server certificate can no longer be verified.
+    const ca = execFileSync(
+      'openssl',
+      [
+        'req',
+        '-x509',
+        '-newkey',
+        'ec',
+        '-pkeyopt',
+        'ec_paramgen_curve:prime256v1',
+        '-nodes',
+        '-subj',
+        '/CN=forest-untrusted-test-ca',
+        '-days',
+        '1',
+        '-keyout',
+        '/dev/null',
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
     );
-    const env = {
-      ...process.env,
-      DATABASE_SSL_CA_PATH: ca,
-      MIGRATION_COMMAND_TIMEOUT_MS: '5000',
-    };
+    const options = databaseOptions();
     const client = new PrismaClient({
-      adapter: new PrismaPg(databaseOptions(env)),
+      adapter: new PrismaPg({
+        ...options,
+        ssl: {
+          rejectUnauthorized: true,
+          ca,
+        },
+      }),
     });
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
-      await expect(client.$queryRaw`SELECT 1`).rejects.toThrow();
-      expect(await runMigration('show', env)).not.toBe(0);
-      const logs = spy.mock.calls.flat().join(' ');
-      expect(logs).not.toContain(
-        new URL(process.env.MIGRATION_DATABASE_URL!).password,
+      const error = await client.$queryRaw`SELECT 1`.then(
+        () => undefined,
+        (reason: unknown) => reason,
       );
+      expect(String(error)).toMatch(/certificate/i);
+      expect(String(error)).not.toContain(String(options.password));
     } finally {
-      spy.mockRestore();
       await client.$disconnect();
-      rmSync(dir, { recursive: true, force: true });
     }
   });
   it('fails a refused connection within a bounded interval', async () => {

@@ -74,9 +74,7 @@ async function start(name: string, command: string, args: string[], cwd: string,
 }
 
 async function main(): Promise<number> {
-  // The API resolves ${PWD} in DATABASE_SSL_CA_PATH from its own directory.
-  process.chdir(api);
-  // Read apps/api/.env without expanding ${PWD}: the API resolves it from its own directory.
+  // Read apps/api/.env; variables already set in the environment win.
   const envFile = resolve(api, '.env');
   if (existsSync(envFile))
     for (const [key, value] of Object.entries(parseEnv(readFileSync(envFile, 'utf8'))))
