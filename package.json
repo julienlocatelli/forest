@@ -18,7 +18,7 @@
     "@types/node": "26.6.3",
     "gherkin-lint": "4.2.4",
     "knip": "6.44.1",
-    "markdownlint-cli2": "0.23.3",
+    "markdownlint-cli2": "0.24.0",
     "typescript": "7.0.2"
   }
 }
