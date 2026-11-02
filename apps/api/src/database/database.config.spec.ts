@@ -1,6 +1,3 @@
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { databaseOptions, migrationUrl } from './database.config.js';
 const valid = {
@@ -38,45 +35,6 @@ describe('database configuration', () => {
       ).toThrow('DATABASE_POOL_SIZE');
     },
   );
-  it('fails closed on unreadable CA', () => {
-    expect(() =>
-      databaseOptions({
-        ...valid,
-        DATABASE_SSL_CA_PATH: '/does-not-exist/private',
-      }),
-    ).toThrow('DATABASE_SSL_CA_PATH');
-  });
-  it.each(['HOME', 'PWD'])('reads a CA with ${%s} in its path', (variable) => {
-    const directory = mkdtempSync(join(tmpdir(), 'forest-ca-'));
-    const file = join(directory, 'ca.crt');
-    const pem =
-      '-----BEGIN CERTIFICATE-----\nfixture\n-----END CERTIFICATE-----';
-    try {
-      writeFileSync(file, pem);
-      const path =
-        variable === 'HOME'
-          ? '${HOME}/ca.crt'
-          : '${PWD}/' + relative(process.cwd(), file);
-      const options = databaseOptions({
-        ...valid,
-        HOME: directory,
-        DATABASE_SSL_CA_PATH: path,
-      });
-      expect(options.ssl).toEqual({ rejectUnauthorized: true, ca: pem });
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  });
-  it('rejects unsupported path variables without exposing the value', () => {
-    expect(() =>
-      databaseOptions({
-        ...valid,
-        DATABASE_SSL_CA_PATH: '${UNKNOWN}/secret.crt',
-      }),
-    ).toThrow(
-      'DATABASE_SSL_CA_PATH must reference a readable PEM certificate.',
-    );
-  });
   it('bounds the runtime pool and verifies TLS', () => {
     const options = databaseOptions(valid);
     expect(options.ssl).toEqual({ rejectUnauthorized: true });

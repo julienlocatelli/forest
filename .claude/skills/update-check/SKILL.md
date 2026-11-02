@@ -39,7 +39,7 @@ For each dependency, read the release notes or changelog of every version after 
 ### 4. Boot both applications
 
 1. Check the head out in a separate worktree, `git worktree add <scratchpad>/update-check-<number> <head SHA>`, so the main checkout stays as it is, and run `bun install --frozen-lockfile` there.
-2. **API:** copy the untracked `apps/api/.env`, and the certificate file `DATABASE_SSL_CA_PATH` names, into the worktree's `apps/api`, never committing them. Build with `bun run --cwd apps/api build`. Start `node dist/main.js` from `apps/api` with `PORT=3201`, and `DATABASE_URL` and `MIGRATION_DATABASE_URL` set to the `TEST_DATABASE_URL` and `TEST_MIGRATION_DATABASE_URL` values: the isolated test database, never the application's. It boots when `GET http://localhost:3201/` answers within 60 seconds.
+2. **API:** copy the untracked `apps/api/.env` into the worktree's `apps/api`, never committing it. Build with `bun run --cwd apps/api build`. Start `node dist/main.js` from `apps/api` with `PORT=3201`, and `DATABASE_URL` and `MIGRATION_DATABASE_URL` set to the `TEST_DATABASE_URL` and `TEST_MIGRATION_DATABASE_URL` values: the isolated test database, never the application's. It boots when `GET http://localhost:3201/` answers within 60 seconds.
 3. **Front:** `bun run --cwd apps/front build`, then `next start -p 3200` from `apps/front`. It boots when `GET http://localhost:3200/` answers `200` within 60 seconds.
 4. Stop both servers and remove the worktree, whatever the outcome.
 

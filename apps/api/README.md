@@ -77,8 +77,7 @@ migrations s'exécutent nativement, y compris sous macOS.
 Le client impose TLS avec validation du certificat ; ne jamais utiliser
 `rejectUnauthorized=false`. Aucun fichier CA n'est nécessaire : Neon présente un
 certificat d'une autorité publique, vérifié avec les racines du système par l'API et par
-le CLI de migration. `DATABASE_SSL_CA_PATH` reste disponible pour une CA privée de
-l'application ; les tests l'ignorent et n'utilisent que `TEST_DATABASE_SSL_CA_PATH`.
+le CLI de migration.
 
 Neon suspend le calcul d'une branche après 5 minutes d'inactivité. La première connexion
 le réveille en quelques secondes, dans le délai `DATABASE_CONNECT_TIMEOUT_MS` (10 s par
@@ -147,7 +146,7 @@ PRODUCTION_DATABASE_PROJECT_REF (ou none si aucune production n'existe).
 Sans cette garde, les suites refusent de démarrer. Elles exécutent les migrations et
 créent/nettoient uniquement leurs propres fiches. Aucune lecture de la base locale.
 Les suites vérifient CRUD, persistance après redémarrage, migrations répétées et permissions.
-La suite database-connectivity.e2e-spec.ts vérifie séparément la CA runtime et CLI, le refus de connexion et la fermeture des ressources.
+La suite database-connectivity.e2e-spec.ts vérifie la connexion runtime et CLI, le refus d'un certificat non vérifiable (CA auto-signée générée avec `openssl`), le refus de connexion et la fermeture des ressources.
 
 ## Échecs et reprise
 
@@ -166,26 +165,13 @@ Depuis la racine, `bun dev` lance les workspaces et charge `apps/api/.env` pour 
 Les tables absentes produisent un diagnostic `DATABASE_SCHEMA`, sans erreur brute
 ni secret. Le démarrage HTTP ne modifie pas le schéma.
 
-## Chemin du certificat avec variables
-
-DATABASE_SSL_CA_PATH et TEST_DATABASE_SSL_CA_PATH acceptent `${HOME}` (répertoire
-personnel) et `${PWD}` (répertoire courant du processus), par exemple :
-
-```dotenv
-DATABASE_SSL_CA_PATH=${HOME}/Developer/forest/infra/certs/app-ca.crt
-```
-
-Cette expansion s'applique au chemin du certificat dans l'API et le runner de migrations.
-Les URL et mots de passe sont conservés littéralement. Les autres variables de chemin
-sont refusées avec un diagnostic sans valeur sensible.
-
 ## Workflow du modèle
 
 `prisma/schema.prisma` décrit le modèle ; `prisma/migrations` porte le SQL revu et les droits/RLS non représentés par le modèle. Le client généré dans `src/generated/prisma` est exclu de Git et doit être régénéré avant compilation. generate/validate/build ne nécessitent aucun secret migration. Aucun DDL au démarrage.
 
 Pour une évolution future, générer un draft `prisma migrate dev --create-only` seulement sur développement et shadow dédiés, avec les rôles nécessaires préprovisionnés. Ne jamais utiliser production comme shadow. L’initialisation de ce ticket a été générée offline avec migrate diff --from-empty puis complétée par les droits SQL.
 
-Le runtime utilise DATABASE_URL sans query parameters et un objet TLS pg vérifié. Le wrapper construit séparément la configuration TLS du moteur CLI via MIGRATION_DATABASE_URL ; DATABASE_SSL_CA_PATH, s'il est défini, est validé puis transmis comme sslcert. Ne jamais contourner un échec CA par une désactivation TLS. Les credentials migration ne sont pas nécessaires au démarrage applicatif.
+Le runtime utilise DATABASE_URL sans query parameters et un objet TLS pg vérifié. Le wrapper construit séparément la configuration TLS du moteur CLI via MIGRATION_DATABASE_URL, avec `sslmode=require` et `sslaccept=strict`. Ne jamais contourner un échec de vérification par une désactivation TLS. Les credentials migration ne sont pas nécessaires au démarrage applicatif.
 
 ## Local authentication
 

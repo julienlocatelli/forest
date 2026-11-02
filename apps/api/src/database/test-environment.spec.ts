@@ -92,12 +92,4 @@ describe('test destination isolation', () => {
       }),
     ).toThrow('differ');
   });
-  it('verifies test TLS with the test CA only, system roots by default', () => {
-    const appCa = { ...env, DATABASE_SSL_CA_PATH: '/certs/app.crt' };
-    expect(testEnvironment(appCa).DATABASE_SSL_CA_PATH).toBe('');
-    expect(
-      testEnvironment({ ...appCa, TEST_DATABASE_SSL_CA_PATH: '/certs/test.crt' })
-        .DATABASE_SSL_CA_PATH,
-    ).toBe('/certs/test.crt');
-  });
 });

@@ -58,7 +58,5 @@ export function testEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
     ...env,
     DATABASE_URL: env.TEST_DATABASE_URL,
     MIGRATION_DATABASE_URL: env.TEST_MIGRATION_DATABASE_URL,
-    // Never the application's CA: an empty value verifies against the system roots.
-    DATABASE_SSL_CA_PATH: env.TEST_DATABASE_SSL_CA_PATH ?? '',
   };
 }
