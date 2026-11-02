@@ -16,7 +16,7 @@
     "test:scripts": "bun test ./.github/scripts"
   },
   "devDependencies": {
-    "@types/node": "26.6.3",
+    "@types/node": "26.6.6",
     "gherkin-lint": "4.2.4",
     "knip": "6.44.1",
     "markdownlint-cli2": "0.24.0",
