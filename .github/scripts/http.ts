@@ -2,6 +2,16 @@
 
 export type Fetch = typeof fetch;
 
+// A request the service refused, with its HTTP status.
+export class HttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
 // Sends `body` as JSON and returns the JSON answer, or undefined for an empty one such as a 204;
 // a refused request throws with the service's status and message.
 export async function requestJson(
@@ -18,7 +28,8 @@ export async function requestJson(
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const path = new URL(url).pathname.replace(/^\/v1/, '');
-  if (!response.ok) throw new Error(`${service} refused ${method} ${path}: ${response.status} ${await response.text()}`);
+  if (!response.ok)
+    throw new HttpError(`${service} refused ${method} ${path}: ${response.status} ${await response.text()}`, response.status);
   const text = await response.text();
   if (!text) return undefined;
   try {
@@ -26,4 +37,16 @@ export async function requestJson(
   } catch {
     throw new Error(`${service} answered ${method} ${path} with a body that is not JSON: ${text.slice(0, 200)}`);
   }
+}
+
+const GITHUB = 'https://api.github.com';
+
+// Calls the GitHub REST API with a token, such as the workflow's GITHUB_TOKEN.
+export function github(fetcher: Fetch, token: string, method: string, path: string, body?: unknown) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+  return requestJson(fetcher, 'GitHub', method, `${GITHUB}${path}`, headers, body);
 }
