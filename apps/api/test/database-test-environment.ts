@@ -5,22 +5,11 @@ function neonEndpoint(url: URL): string | undefined {
     url.hostname,
   )?.[1];
 }
-function supabaseProject(url: URL): string | undefined {
-  const direct = /^db\.([a-z0-9]+)\.supabase\.co$/.exec(url.hostname);
-  const pooled = /\.([a-z0-9]+)$/.exec(decodeURIComponent(url.username));
-  if (direct) return direct[1];
-  if (url.hostname.endsWith('.pooler.supabase.com') && pooled) return pooled[1];
-  return undefined;
-}
-// The Neon endpoint ID or the Supabase project ref the URL targets.
+// The Neon endpoint ID the URL targets.
 export function projectReference(raw: string | undefined, key: string): string {
-  const url = connectionUrl(raw, key);
-  const project = neonEndpoint(url) ?? supabaseProject(url);
-  if (!project)
-    throw new Error(
-      `${key} must identify a Neon endpoint or a Supabase project.`,
-    );
-  return project;
+  const endpoint = neonEndpoint(connectionUrl(raw, key));
+  if (!endpoint) throw new Error(`${key} must identify a Neon endpoint.`);
+  return endpoint;
 }
 // The runtime goes through the pooler; the migration CLI needs a direct connection.
 function testEndpoint(
@@ -29,8 +18,7 @@ function testEndpoint(
   pooled: boolean,
 ): string {
   const url = connectionUrl(raw, key);
-  const endpoint = neonEndpoint(url);
-  if (!endpoint) throw new Error(`${key} must identify a Neon endpoint.`);
+  const endpoint = projectReference(raw, key);
   if (url.hostname.startsWith(`${endpoint}-pooler.`) !== pooled)
     throw new Error(
       pooled
