@@ -22,18 +22,35 @@ export function projectReference(raw: string | undefined, key: string): string {
     );
   return project;
 }
-function testEndpoint(raw: string | undefined, key: string): string {
-  const endpoint = neonEndpoint(connectionUrl(raw, key));
+// The runtime goes through the pooler; the migration CLI needs a direct connection.
+function testEndpoint(
+  raw: string | undefined,
+  key: string,
+  pooled: boolean,
+): string {
+  const url = connectionUrl(raw, key);
+  const endpoint = neonEndpoint(url);
   if (!endpoint) throw new Error(`${key} must identify a Neon endpoint.`);
+  if (url.hostname.startsWith(`${endpoint}-pooler.`) !== pooled)
+    throw new Error(
+      pooled
+        ? `${key} must use the pooled Neon host (-pooler).`
+        : `${key} must use the direct Neon host, without -pooler.`,
+    );
   return endpoint;
 }
 export function testEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   if (env.TEST_DATABASE_CONFIRM_ISOLATED !== 'true')
     throw new Error('TEST_DATABASE_CONFIRM_ISOLATED=true is required.');
-  const runtime = testEndpoint(env.TEST_DATABASE_URL, 'TEST_DATABASE_URL');
+  const runtime = testEndpoint(
+    env.TEST_DATABASE_URL,
+    'TEST_DATABASE_URL',
+    true,
+  );
   const migration = testEndpoint(
     env.TEST_MIGRATION_DATABASE_URL,
     'TEST_MIGRATION_DATABASE_URL',
+    false,
   );
   if (runtime !== migration)
     throw new Error('Test connections must target the same project.');

@@ -91,7 +91,8 @@ base suffit : `neondb` de la branche par défaut.
 4. Après vérification du projet dans la console, définir `TEST_DATABASE_CONFIRM_ISOLATED=true`.
 
 Le garde-fou des tests identifie le projet par l'ID d'endpoint `ep-…` de l'hôte : les deux
-URL doivent le partager, il doit différer de `PRODUCTION_DATABASE_PROJECT_REF` et des URL
+URL doivent le partager, `TEST_DATABASE_URL` doit passer par l'hôte poolé et
+`TEST_MIGRATION_DATABASE_URL` par l'hôte direct, l'endpoint doit différer de `PRODUCTION_DATABASE_PROJECT_REF` et des URL
 de l'application, et une URL de test qui n'est pas un endpoint Neon est refusée.
 
 Aucun fichier CA n'est nécessaire : Neon présente un certificat d'une autorité publique,

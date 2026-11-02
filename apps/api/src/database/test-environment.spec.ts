@@ -54,6 +54,22 @@ describe('test destination isolation', () => {
     expect(run).toThrow('TEST_DATABASE_URL must identify a Neon endpoint.');
     expect(run).not.toThrow('secret');
   });
+  it('requires a pooled runtime URL and a direct migration URL', () => {
+    expect(() =>
+      testEnvironment({
+        ...env,
+        TEST_DATABASE_URL: env.TEST_MIGRATION_DATABASE_URL,
+      }),
+    ).toThrow('TEST_DATABASE_URL must use the pooled Neon host (-pooler).');
+    expect(() =>
+      testEnvironment({
+        ...env,
+        TEST_MIGRATION_DATABASE_URL: env.TEST_DATABASE_URL,
+      }),
+    ).toThrow(
+      'TEST_MIGRATION_DATABASE_URL must use the direct Neon host, without -pooler.',
+    );
+  });
   it('rejects an unknown application host', () => {
     expect(() =>
       testEnvironment({
