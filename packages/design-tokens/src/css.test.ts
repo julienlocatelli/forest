@@ -28,6 +28,7 @@ describe('sharedVariables', () => {
     const shared = sharedVariables();
     expect(shared['--space-md']).toBe('12px');
     expect(shared['--radius-full']).toBe('9999px');
+    expect(shared['--border-width-focus']).toBe('2px');
     expect(shared['--font-size-body']).toBe('16px');
     expect(shared['--line-height-body']).toBe('24px');
     expect(shared['--font-weight-body']).toBe('400');

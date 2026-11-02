@@ -19,7 +19,7 @@ Forest's design variables, shared by the web front and the future mobile app. Th
 | `onDanger` | Text on `danger` | `#ffffff` | `#3c0b08` | `--color-on-danger` |
 | `focus` | Focus outline | `#1f5fbf` | `#8ab4f8` | `--color-focus` |
 
-`contrastPairs` lists the text-on-background pairs; the tests check each reaches WCAG AA (4.5:1) in every theme. `border` and `focus` are not text colors and are not in the list.
+`contrastPairs` lists the text-on-background pairs; the tests check each reaches WCAG AA (4.5:1) in every theme. `nonTextContrastPairs` lists `focus` on `background` and `surface`, checked against WCAG 1.4.11 (3:1). `border` is decorative and in neither list.
 
 To add a theme, add an entry to `themes` in `src/colors.ts` with a value for every color name: TypeScript and the tests refuse a theme missing one. Nothing else changes.
 
@@ -32,6 +32,7 @@ Lengths are unitless numbers: density-independent pixels on mobile, `px` on the 
 | `spacing` | `xxs` 2, `xs` 4, `sm` 8, `md` 12, `lg` 16, `xl` 24, `xxl` 32, `xxxl` 48 | `--space-<name>` |
 | `typography` | `caption` 12/16 400, `body` 16/24 400, `label` 14/20 500, `title` 20/28 600, `headline` 28/36 700 (font size / line height, weight) | `--font-size-<name>`, `--line-height-<name>`, `--font-weight-<name>` |
 | `radius` | `none` 0, `sm` 4, `md` 8, `lg` 16, `full` 9999 | `--radius-<name>` |
+| `borderWidth` | `thin` 1, `focus` 2 (focus outline width and offset) | `--border-width-<name>` |
 | `shadows` | `sm`, `md`, `lg`, as React Native shadow styles | `--shadow-<name>` (`box-shadow` value) |
 
 Font families stay with each platform: the web keeps its font stack, mobile its system font.

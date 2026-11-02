@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { themeStylesheet } from "@forest/design-tokens";
 import { Geist, Geist_Mono } from "next/font/google";
+import "@forest/ui/styles.css";
 import "./globals.css";
 
 const geistSans = Geist({

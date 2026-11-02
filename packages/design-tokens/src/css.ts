@@ -1,7 +1,7 @@
 // CSS custom properties for the web. The stylesheet holds every theme, so the web switches theme at runtime
 // by setting `data-theme` on the root element, without a rebuild.
 import { type ThemeName, themes } from './colors.ts';
-import { radius, shadows, spacing, typography } from './scales.ts';
+import { borderWidth, radius, shadows, spacing, typography } from './scales.ts';
 
 type Variables = Record<string, string>;
 
@@ -27,6 +27,7 @@ export function sharedVariables(): Variables {
     variables[`--font-weight-${name}`] = `${style.fontWeight}`;
   }
   for (const [name, value] of Object.entries(radius)) variables[`--radius-${name}`] = `${value}px`;
+  for (const [name, value] of Object.entries(borderWidth)) variables[`--border-width-${name}`] = `${value}px`;
   for (const [name, shadow] of Object.entries(shadows))
     variables[`--shadow-${name}`] =
       `${shadow.shadowOffset.width}px ${shadow.shadowOffset.height}px ${shadow.shadowRadius}px ${rgba(shadow.shadowColor, shadow.shadowOpacity)}`;

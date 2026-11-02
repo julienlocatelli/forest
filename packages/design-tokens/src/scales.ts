@@ -30,6 +30,12 @@ export const radius = {
   full: 9999,
 };
 
+// Border widths; `focus` is also the focus outline's width and offset.
+export const borderWidth = {
+  thin: 1,
+  focus: 2,
+};
+
 // React Native style objects; `elevation` is Android's equivalent. The web derives its box-shadow from them.
 export const shadows = {
   sm: { shadowColor: '#000000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 2, elevation: 1 },

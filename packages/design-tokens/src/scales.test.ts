@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { themes } from './colors.ts';
-import { radius, shadows, spacing, typography } from './scales.ts';
+import { borderWidth, radius, shadows, spacing, typography } from './scales.ts';
 
 // Every leaf React Native reads must be a plain number or a `#rrggbb` color string.
 function leaves(value: unknown, path: string): [string, unknown][] {
@@ -9,7 +9,7 @@ function leaves(value: unknown, path: string): [string, unknown][] {
   return [[path, value]];
 }
 
-const values = leaves({ spacing, typography, radius, shadows, themes }, 'tokens');
+const values = leaves({ spacing, typography, radius, borderWidth, shadows, themes }, 'tokens');
 
 describe('React Native values', () => {
   test('cover every variable', () => {
