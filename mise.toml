@@ -6,3 +6,8 @@ node = "24.22.2"
 "npm:@nestjs/cli" = "12.0.11"
 "npm:ctx7" = "0.8.2"
 "npm:neon" = "8.16.0"
+
+[tasks.clean-branches]
+description = "Delete local branches whose pull request into main is merged"
+# Tasks run from the repository root, so this works from anywhere in the clone.
+run = "bun .github/scripts/clean-branches.ts"

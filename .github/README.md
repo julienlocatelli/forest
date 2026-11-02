@@ -99,6 +99,23 @@ Branches merged before this workflow existed are not cleaned up. To test the scr
 bun test ./.github/scripts/delete-branch.test.ts
 ```
 
+## Clean merged local branches
+
+`mise run clean-branches` cleans the local clone; it works from any directory inside it, since mise runs its tasks from the repository root. It needs `gh` signed in to GitHub. `.github/scripts/clean-branches.ts`:
+
+1. Runs `git fetch --prune origin`, which removes the `origin/*` references of branches deleted on GitHub.
+2. Reads the pull requests merged into `main` with `gh`.
+3. Deletes a local branch only when one of those pull requests has it as head branch and contains its tip: the branch holds no commit the pull request lacks.
+4. Prints every deleted branch, and every kept branch with its reason.
+
+It never deletes:
+
+- `main`;
+- a branch without a merged pull request into `main`;
+- a branch with commits its merged pull request does not contain, such as work pushed after the merge.
+
+When the current branch is to be deleted, it first switches to `main` and pulls it from GitHub. With uncommitted changes in the working tree, it deletes nothing at all, says why and exits with an error. Running it again right away deletes nothing and lists the same kept branches.
+
 ## Dependency updates
 
 [Renovate](https://docs.renovatebot.com/) opens a pull request whenever a dependency has a newer version. It runs as the hosted Mend Renovate GitHub App, and its configuration is `renovate.json` at the repository root. It updates:
