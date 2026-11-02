@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { themeStylesheet } from "@forest/design-tokens";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -23,6 +24,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Every shared theme: light by default, dark when the system prefers it, or the chosen data-theme. */}
+        <style dangerouslySetInnerHTML={{ __html: themeStylesheet() }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
