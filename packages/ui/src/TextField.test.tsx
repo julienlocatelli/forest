@@ -32,6 +32,19 @@ describe('TextField', () => {
     expect(hex(getComputedStyle(input).borderColor)).toBe(themes.light.danger);
   });
 
+  test("keeps the hint and error tied to the input when the caller adds its own description", () => {
+    render(
+      <>
+        <p id="extra">Shown above the form.</p>
+        <TextField label="Email" hint="Your work email." error="Enter a valid email." aria-describedby="extra" aria-invalid={false} />
+      </>,
+    );
+    const input = screen.getByLabelText('Email');
+    const ids = input.getAttribute('aria-describedby')?.split(' ');
+    expect(ids).toEqual(['extra', screen.getByText('Your work email.').id, screen.getByRole('alert').id]);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
+
   test('is reached with Tab and typed into, with a visible focus outline', async () => {
     const user = userEvent.setup();
     render(<TextField label="Name" />);

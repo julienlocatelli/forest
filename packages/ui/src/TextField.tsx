@@ -8,11 +8,21 @@ export interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   error?: string;
 }
 
-export function TextField({ label, hint, error, className, type = 'text', ...props }: TextFieldProps) {
+export function TextField({
+  label,
+  hint,
+  error,
+  className,
+  type = 'text',
+  'aria-describedby': callerDescribedBy,
+  'aria-invalid': callerInvalid,
+  ...props
+}: TextFieldProps) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
-  const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined;
+  // The caller's own description comes first; the hint and the error always stay tied to the input.
+  const describedBy = [callerDescribedBy, hintId, errorId].filter(Boolean).join(' ') || undefined;
   const classes = ['forest-text-field__input', 'forest-focusable', error && 'forest-text-field__input--invalid', className];
   return (
     <div className="forest-text-field">
@@ -23,9 +33,9 @@ export function TextField({ label, hint, error, className, type = 'text', ...pro
         id={id}
         type={type}
         className={classes.filter(Boolean).join(' ')}
-        aria-describedby={describedBy}
-        aria-invalid={error ? true : undefined}
         {...props}
+        aria-describedby={describedBy}
+        aria-invalid={error ? true : callerInvalid}
       />
       {hint && (
         <p id={hintId} className="forest-text-field__hint">
