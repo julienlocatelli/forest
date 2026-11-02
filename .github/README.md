@@ -13,6 +13,7 @@ Each check is its own step, named in the run:
 | API unit tests | `bun run --cwd apps/api test` |
 | Front lint | `bun run --cwd apps/front lint` |
 | Front build | `bun run --cwd apps/front build` |
+| Design tokens tests | `bun run --cwd packages/design-tokens test` |
 | Unused code (knip) | `bun run knip` |
 | Gherkin lint | `bun run lint:gherkin` |
 | Script tests | `bun run test:scripts` |

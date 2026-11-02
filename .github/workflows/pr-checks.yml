@@ -39,6 +39,8 @@ jobs:
         run: bun run --cwd apps/front lint
       - name: Front build
         run: bun run --cwd apps/front build
+      - name: Design tokens tests
+        run: bun run --cwd packages/design-tokens test
       - name: Unused code (knip)
         run: bun run knip
       - name: Gherkin lint
