@@ -10,11 +10,11 @@ CREATE TABLE public."user" (
 );
 
 ALTER TABLE public."user" ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public."user" FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON SEQUENCE public.user_id_seq FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public."user" FROM PUBLIC;
+REVOKE ALL ON SEQUENCE public.user_id_seq FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO forest_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public."user" TO forest_app;
 GRANT USAGE, SELECT ON SEQUENCE public.user_id_seq TO forest_app;
 CREATE POLICY forest_app_crud ON public."user" FOR ALL TO forest_app USING (true) WITH CHECK (true);
-REVOKE ALL ON public._prisma_migrations FROM PUBLIC, anon, authenticated, forest_app;
+REVOKE ALL ON public._prisma_migrations FROM PUBLIC, forest_app;
 COMMIT;
