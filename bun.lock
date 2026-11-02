@@ -66,6 +66,10 @@
         "typescript": "5.9.3",
       },
     },
+    "packages/design-tokens": {
+      "name": "@forest/design-tokens",
+      "version": "0.1.0",
+    },
     "test-e2e": {
       "name": "test-e2e",
       "devDependencies": {
@@ -184,6 +188,8 @@
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.4.1", "", { "dependencies": { "@eslint/core": "^0.17.0", "levn": "^0.4.1" } }, "sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA=="],
 
     "@forest/api": ["@forest/api@workspace:apps/api"],
+
+    "@forest/design-tokens": ["@forest/design-tokens@workspace:packages/design-tokens"],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 
