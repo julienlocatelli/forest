@@ -1,65 +1,31 @@
-# Forest API — Supabase PostgreSQL
+# Forest API — PostgreSQL sur Neon
 
-NestJS utilise Prisma ORM 7.10.0 (CLI, client et adapter-pg figés) ; Supabase héberge PostgreSQL. Aucun Auth, Storage, Realtime
-ou accès direct aux données depuis le navigateur n'est ajouté. Les routes utilisateurs
+NestJS utilise Prisma ORM 7.10.0 (CLI, client et adapter-pg figés) ; Neon héberge PostgreSQL.
+Aucun accès direct aux données depuis le navigateur n'est ajouté. Les routes utilisateurs
 existantes restent sans authentification : ne pas exposer cette API publiquement sans
 traiter ce point dans une feature dédiée.
 
-## Environnements et accès
+## Environnements
 
-Créer un projet Supabase pour l'application. Les tests utilisent un projet Neon dédié,
-décrit dans [Base de test Neon](#base-de-test-neon).
-Activer SSL enforcement dans les réglages de base de données. Dans Connect, copier
-une connexion directe si IPv6 disponible ou Session pooler IPv4 sur port 5432.
-Ne pas recomposer l'hôte. Pour un rôle personnalisé via pooler, utiliser
-forest_app.PROJECT_REF ou forest_migration.PROJECT_REF comme nom de connexion.
-Encoder les caractères réservés du mot de passe et retirer les query parameters de l'URL.
-Le client impose TLS avec validation du certificat. Si une CA est requise, télécharger
-le certificat du projet et fournir son chemin via DATABASE_SSL_CA_PATH ; ne jamais
-utiliser rejectUnauthorized=false.
+Forest utilise un seul projet Neon et deux de ses branches :
+
+- la branche par défaut porte la base de l'application (`DATABASE_URL`,
+  `MIGRATION_DATABASE_URL`) ;
+- la branche enfant `test` porte la base des suites `test:e2e` et des scénarios Cucumber
+  (`TEST_DATABASE_URL`, `TEST_MIGRATION_DATABASE_URL`).
+
+Chaque branche a son propre endpoint, identifié par l'ID `ep-…` de son hôte, et une seule
+base `neondb`. Une branche copie les rôles, mots de passe compris, et les données de sa
+branche parente au moment de sa création. Réinitialiser la branche `test` depuis la branche
+par défaut, ou la recréer, y copie donc les données de l'application : le faire seulement
+quand ces données peuvent servir aux tests, et sinon vider les tables Forest de `test`
+avant de lancer les suites.
 
 ## Provisionnement initial
 
-Dans le projet Supabase de l'application, exécuter en administrateur privé les commandes suivantes.
-Elles ne contiennent pas de secrets ; si un rôle existe déjà, examiner sa définition
-avant de poursuivre plutôt que de le remplacer silencieusement.
-
-```sql
-CREATE ROLE forest_migration LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
-CREATE ROLE forest_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
-GRANT CONNECT ON DATABASE postgres TO forest_app, forest_migration;
-REVOKE CREATE ON SCHEMA public FROM PUBLIC;
-GRANT USAGE, CREATE ON SCHEMA public TO forest_migration;
-GRANT USAGE ON SCHEMA public TO forest_app;
-```
-
-La révocation de CREATE pour PUBLIC concerne un projet dédié ; si le projet est partagé,
-évaluer préalablement ses autres consommateurs. Le rôle de migration possède les objets
-Forest qu'il crée. Ne donner aucune appartenance à un rôle administrateur au runtime.
-Configurer les mots de passe avec un client PostgreSQL interactif connecté en administrateur :
-
-```text
-\password forest_migration
-\password forest_app
-```
-
-Ne pas inscrire les mots de passe dans un script versionné, une commande shell ou un
-éditeur SQL conservant son historique. Les rôles runtime et migration ne doivent pas
-avoir de grants sur auth/storage. Vérifier les grants hérités dans le projet ; les tests
-signalent toute permission excessive. Sur un projet uniquement utilisé par Forest,
-désactiver la Data API inutilisée. Sinon conserver ses réglages globaux : la migration
-révoque les droits PUBLIC sur les seuls objets Forest et active RLS ; révoquer à la main
-les droits anon/authenticated de Supabase sur ces objets si la Data API reste active.
-
-## Base de test Neon
-
-Les suites `test:e2e` de l'API et les scénarios Cucumber utilisent un projet Neon
-réservé aux tests, distinct du projet de l'application et de la production. Une seule
-base suffit : `neondb` de la branche par défaut.
-
 1. Dans la console Neon, créer le projet, puis ouvrir **SQL Editor** sur la base `neondb`
-   avec le rôle propriétaire (`neondb_owner`). Les rôles créés en SQL ne reçoivent pas
-   `neon_superuser`, contrairement à ceux créés depuis la console.
+   de la branche par défaut avec le rôle propriétaire (`neondb_owner`). Les rôles créés en
+   SQL ne reçoivent pas `neon_superuser`, contrairement à ceux créés depuis la console.
 
    ```sql
    CREATE ROLE forest_migration LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOBYPASSRLS;
@@ -69,6 +35,10 @@ base suffit : `neondb` de la branche par défaut.
    GRANT USAGE, CREATE ON SCHEMA public TO forest_migration;
    GRANT USAGE ON SCHEMA public TO forest_app;
    ```
+
+   Si un rôle existe déjà, examiner sa définition avant de poursuivre plutôt que de le
+   remplacer silencieusement. Le rôle de migration possède les objets Forest qu'il crée.
+   Ne donner aucune appartenance à un rôle administrateur au runtime.
 
 2. Définir les mots de passe depuis `psql` connecté avec le rôle propriétaire. Neon
    n'accepte que des mots de passe en clair : `\password` échoue, car il envoie un hash.
@@ -82,26 +52,50 @@ base suffit : `neondb` de la branche par défaut.
    ALTER ROLE forest_app WITH PASSWORD :'pw';
    ```
 
-3. Dans **Connect**, copier deux URL de la même branche et les renseigner dans `.env`,
-   sans query parameters :
-   - `TEST_DATABASE_URL` : rôle `forest_app`, connexion poolée (hôte `ep-…-pooler`) ;
-   - `TEST_MIGRATION_DATABASE_URL` : rôle `forest_migration`, connexion directe (hôte
-     `ep-…` sans `-pooler`), que le CLI de migration exige.
+   Ne pas inscrire les mots de passe dans un script versionné, une commande shell ou un
+   éditeur SQL conservant son historique.
 
-4. Après vérification du projet dans la console, définir `TEST_DATABASE_CONFIRM_ISOLATED=true`.
+3. Créer la branche enfant `test` depuis la branche par défaut tant que celle-ci ne contient
+   aucune donnée de l'application. Elle hérite des rôles et de leurs mots de passe ; un
+   mot de passe changé ensuite sur l'une des branches ne change pas sur l'autre.
 
-Le garde-fou des tests identifie le projet par l'ID d'endpoint `ep-…` de l'hôte : les deux
-URL doivent le partager, `TEST_DATABASE_URL` doit passer par l'hôte poolé et
-`TEST_MIGRATION_DATABASE_URL` par l'hôte direct, l'endpoint doit différer de `PRODUCTION_DATABASE_PROJECT_REF` et des URL
-de l'application, et une URL de test qui n'est pas un endpoint Neon est refusée.
+## Connexion et TLS
 
-Aucun fichier CA n'est nécessaire : Neon présente un certificat d'une autorité publique,
-vérifié avec les racines du système par l'API et par le CLI de migration. Les tests
-ignorent `DATABASE_SSL_CA_PATH`, réservé à l'application ; `TEST_DATABASE_SSL_CA_PATH`
-fournit une CA aux tests si un projet de test en demande une.
+Dans **Connect**, copier pour chaque branche deux URL sans query parameters, en encodant
+les caractères réservés du mot de passe :
 
-Neon suspend le calcul après 5 minutes d'inactivité. La première connexion le réveille
-en quelques secondes, dans le délai `DATABASE_CONNECT_TIMEOUT_MS` (10 s par défaut).
+| Variable | Branche | Rôle | Hôte |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | par défaut | `forest_app` | poolé, `ep-…-pooler` |
+| `MIGRATION_DATABASE_URL` | par défaut | `forest_migration` | direct, `ep-…` |
+| `TEST_DATABASE_URL` | `test` | `forest_app` | poolé, `ep-…-pooler` |
+| `TEST_MIGRATION_DATABASE_URL` | `test` | `forest_migration` | direct, `ep-…` |
+
+Le runtime passe par le pooler ; le CLI de migration exige une connexion directe. Les
+migrations s'exécutent nativement, y compris sous macOS.
+
+Le client impose TLS avec validation du certificat ; ne jamais utiliser
+`rejectUnauthorized=false`. Aucun fichier CA n'est nécessaire : Neon présente un
+certificat d'une autorité publique, vérifié avec les racines du système par l'API et par
+le CLI de migration. `DATABASE_SSL_CA_PATH` reste disponible pour une CA privée de
+l'application ; les tests l'ignorent et n'utilisent que `TEST_DATABASE_SSL_CA_PATH`.
+
+Neon suspend le calcul d'une branche après 5 minutes d'inactivité. La première connexion
+le réveille en quelques secondes, dans le délai `DATABASE_CONNECT_TIMEOUT_MS` (10 s par
+défaut).
+
+## Garde-fou des tests
+
+Après vérification de la branche `test` dans la console, définir
+`TEST_DATABASE_CONFIRM_ISOLATED=true`. Le garde-fou identifie chaque branche par l'ID
+d'endpoint `ep-…` de son hôte et refuse de démarrer les suites si :
+
+- une URL n'est pas un endpoint Neon ;
+- `TEST_DATABASE_URL` n'utilise pas l'hôte poolé, ou `TEST_MIGRATION_DATABASE_URL` pas
+  l'hôte direct ;
+- les deux URL de test ne partagent pas le même endpoint ;
+- l'endpoint de test est celui de l'application ou `PRODUCTION_DATABASE_PROJECT_REF`
+  (ID d'endpoint de production, ou `none` si aucune production n'existe).
 
 Les rôles d'administration de Neon (`neondb_owner`, `neon_service`) lisent et écrivent
 toutes les tables via `pg_read_all_data` et `pg_write_all_data` ; les tests de permissions
@@ -133,7 +127,7 @@ que DATABASE_URL, ne crée aucune extension et n'exécute pas de DDL/migration a
 MIGRATION_DATABASE_URL n'est utilisé que par les commandes de migration.
 
 Paramètres : pool 5 connexions par processus, connexion 10 s, requête 15 s ; adapter le
-pool aux quotas Supabase et au nombre de réplicas. La connexion doit réussir avant que le serveur accepte les requêtes ; le client est fermé au shutdown.
+pool aux limites de connexions de Neon et au nombre de réplicas. La connexion doit réussir avant que le serveur accepte les requêtes ; le client est fermé au shutdown.
 DATABASE_POOL_SIZE, DATABASE_CONNECT_TIMEOUT_MS et DATABASE_QUERY_TIMEOUT_MS doivent
 être des entiers positifs. Les logs excluent les URL, erreurs brutes du driver et SQL.
 
@@ -147,9 +141,9 @@ bun run test:e2e
 ```
 
 test:e2e compile l'application pour préserver les métadonnées NestJS puis charge .env.
-Renseigner les variables `TEST_*` avec le projet Neon de test (voir
-[Base de test Neon](#base-de-test-neon)). Fournir la référence de production via
-PRODUCTION_DATABASE_PROJECT_REF (ou none si aucun projet de production n'existe).
+Renseigner les variables `TEST_*` avec la branche `test` (voir
+[Garde-fou des tests](#garde-fou-des-tests)). Fournir l'endpoint de production via
+PRODUCTION_DATABASE_PROJECT_REF (ou none si aucune production n'existe).
 Sans cette garde, les suites refusent de démarrer. Elles exécutent les migrations et
 créent/nettoient uniquement leurs propres fiches. Aucune lecture de la base locale.
 Les suites vérifient CRUD, persistance après redémarrage, migrations répétées et permissions.
@@ -174,17 +168,11 @@ ni secret. Le démarrage HTTP ne modifie pas le schéma.
 
 ## Chemin du certificat avec variables
 
-DATABASE_SSL_CA_PATH accepte `${HOME}` (répertoire personnel) et `${PWD}` (répertoire
-courant du processus). Depuis apps/api, par exemple :
+DATABASE_SSL_CA_PATH et TEST_DATABASE_SSL_CA_PATH acceptent `${HOME}` (répertoire
+personnel) et `${PWD}` (répertoire courant du processus), par exemple :
 
 ```dotenv
-DATABASE_SSL_CA_PATH=${PWD}/../../infra/certs/prod-supabase.crt
-```
-
-Ou depuis n'importe quel répertoire sur cette machine :
-
-```dotenv
-DATABASE_SSL_CA_PATH=${HOME}/Developer/forest/infra/certs/prod-supabase.crt
+DATABASE_SSL_CA_PATH=${HOME}/Developer/forest/infra/certs/app-ca.crt
 ```
 
 Cette expansion s'applique au chemin du certificat dans l'API et le runner de migrations.
@@ -197,19 +185,7 @@ sont refusées avec un diagnostic sans valeur sensible.
 
 Pour une évolution future, générer un draft `prisma migrate dev --create-only` seulement sur développement et shadow dédiés, avec les rôles nécessaires préprovisionnés. Ne jamais utiliser production comme shadow. L’initialisation de ce ticket a été générée offline avec migrate diff --from-empty puis complétée par les droits SQL.
 
-Le runtime utilise DATABASE_URL sans query parameters et un objet TLS pg vérifié. Le wrapper construit séparément la configuration TLS du moteur CLI via MIGRATION_DATABASE_URL ; DATABASE_SSL_CA_PATH est validé puis transmis comme sslcert. Cette compatibilité doit être confirmée sur le projet de test avant livraison. Ne jamais contourner un échec CA par une désactivation TLS. Les credentials migration ne sont pas nécessaires au démarrage applicatif.
-
-### CLI de migration sous Linux sur macOS
-
-Le moteur TLS natif macOS de Prisma peut refuser la chaîne du pooler Supabase
-alors que le driver Node la valide. Utiliser MIGRATION_CLI_MODE=docker pour
-les migrations locales dans ce cas. Docker doit fonctionner. Construire depuis
-la racine : `docker build -t forest-prisma-cli:7.10.0 -f apps/api/prisma/Dockerfile.cli apps/api/prisma`.
-Puis lancer depuis la racine `bun run --filter @forest/api migration:show` ou
-`migration:run`. Le code et le certificat sont montés en lecture seule ; le
-secret est transmis par environnement. Le CLI conserve sslmode=require et
-sslaccept=strict. Le runtime continue à utiliser Node avec rejectUnauthorized=true.
-Le mode native reste le défaut pour Linux ; aucun basculement silencieux.
+Le runtime utilise DATABASE_URL sans query parameters et un objet TLS pg vérifié. Le wrapper construit séparément la configuration TLS du moteur CLI via MIGRATION_DATABASE_URL ; DATABASE_SSL_CA_PATH, s'il est défini, est validé puis transmis comme sslcert. Ne jamais contourner un échec CA par une désactivation TLS. Les credentials migration ne sont pas nécessaires au démarrage applicatif.
 
 ## Local authentication
 
@@ -243,5 +219,5 @@ and optional user ID. Passwords, emails, tokens, bodies and raw driver errors ar
 Scrypt permits two active jobs and sixteen waiting per process; overflow returns 503.
 
 E2E tests always replace `.env` auth credentials with unique synthetic accounts, target
-the explicitly isolated project and remove owned fixtures. Never target application or
+the explicitly isolated `test` branch and remove owned fixtures. Never target application or
 production databases. Full validation guide: `specs/6-user-login-route/quickstart.md`.

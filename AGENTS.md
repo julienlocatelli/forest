@@ -2,7 +2,7 @@
 
 ## Library documentation
 
-Before writing or changing code that uses a library's API, such as NestJS, Next.js, Prisma or Supabase, fetch that library's current documentation with `ctx7`, pinned in `mise.toml`. Your memory of a fast-moving API can be outdated; the fetched docs win.
+Before writing or changing code that uses a library's API, such as NestJS, Next.js, Prisma or Neon, fetch that library's current documentation with `ctx7`, pinned in `mise.toml`. Your memory of a fast-moving API can be outdated; the fetched docs win.
 
 ```sh
 mise exec -- ctx7 library nestjs "guards"                              # find the library ID

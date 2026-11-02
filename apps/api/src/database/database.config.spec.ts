@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { databaseOptions, migrationUrl } from './database.config.js';
 const valid = {
   DATABASE_URL:
-    'postgresql://forest_app:private@db.test.supabase.co:5432/postgres',
+    'postgresql://forest_app:private@ep-test-a1b2c3d4.eu-central-1.aws.neon.tech/neondb',
 };
 describe('database configuration', () => {
   it('requires runtime credentials independently from migration credentials', () => {
@@ -81,7 +81,7 @@ describe('database configuration', () => {
     const options = databaseOptions(valid);
     expect(options.ssl).toEqual({ rejectUnauthorized: true });
     expect(options.user).toBe('forest_app');
-    expect(options.database).toBe('postgres');
+    expect(options.database).toBe('neondb');
     expect(options.max).toBe(5);
     expect(options.connectionTimeoutMillis).toBe(10000);
     expect(options.query_timeout).toBe(15000);
