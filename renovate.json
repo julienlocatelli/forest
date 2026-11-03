@@ -19,6 +19,11 @@
       "description": "Prisma's CLI, client and adapters must move to one version together.",
       "groupName": "prisma",
       "matchPackageNames": ["prisma", "@prisma/**"]
+    },
+    {
+      "description": "A package keeps its peer dependency ranges: pinning them would conflict with every consumer on another version.",
+      "matchDepTypes": ["peerDependencies"],
+      "rangeStrategy": "widen"
     }
   ]
 }
