@@ -9,7 +9,8 @@
   "workspaces": {
     ".": {
       "entry": [
-        ".github/scripts/*.ts"
+        ".github/scripts/*.ts",
+        ".claude/hooks/*.ts"
       ]
     },
     "apps/api": {
