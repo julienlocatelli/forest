@@ -36,11 +36,22 @@ Every component also takes the props of the HTML element it renders, such as `on
 - `TextField` ties its label to the input, and reads the hint and the error with it through `aria-describedby`.
 - The tests run axe on every component in the light and the dark theme.
 
+## Storybook
+
+From the repository root:
+
+```sh
+bun run storybook
+```
+
+It opens on <http://localhost:6006> and shows every component with one story per variant and state. The **Theme** toolbar control switches every story between the `@forest/design-tokens` themes, without a rebuild: it lists every theme the tokens define, so a new theme appears with no Storybook change. The **Controls** panel shows each story's props and lets you change them. The PR checks build the Storybook (`bun run --cwd packages/ui build-storybook`); a failing build fails them.
+
 ## Rules for the library
 
 - Write no color, length or shadow in a component or in `src/styles.css`: use a `@forest/design-tokens` variable. A test fails on any hex color, `rgb()`, `px`, `rem`, `%` or named color in the sources, and on a variable a theme does not define.
 - Prefix every class with `forest-`.
 - Every new component comes with tests of its rendering, variants, states, keyboard use, axe in every theme and theme switch.
+- Every new component comes with its stories, in `src/<Component>.stories.tsx`: one per variant and state, with controls for its props.
 
 ## Tests
 

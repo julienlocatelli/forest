@@ -15,6 +15,7 @@ Each check is its own step, named in the run:
 | Front build | `bun run --cwd apps/front build` |
 | Design tokens tests | `bun run --cwd packages/design-tokens test` |
 | Web components tests | `bun run --cwd packages/ui test` |
+| Storybook build | `bun run --cwd packages/ui build-storybook` |
 | Unused code (knip) | `bun run knip` |
 | Gherkin lint | `bun run lint:gherkin` |
 | Script tests | `bun run test:scripts` |
