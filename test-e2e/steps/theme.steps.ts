@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { Given, Then } from '@cucumber/cucumber';
+import { Given, Then, When } from '@cucumber/cucumber';
 import { type ThemeName, themes } from '../../packages/design-tokens/src/index.ts';
 import type { ForestWorld } from '../support/world.ts';
 
@@ -33,4 +33,30 @@ Then('the page uses the {word} theme colors', async function (this: ForestWorld,
     };
   });
   assert.deepEqual(shown, { background: rgb(colors.background), text: rgb(colors.text) });
+});
+
+Given('I am on the page at {string}', async function (this: ForestWorld, path: string) {
+  const response = await this.page.goto(path);
+  assert.equal(response?.status(), 200);
+});
+
+// The selector lists System and every theme of the shared package, by name.
+async function choose(world: ForestWorld, choice: string) {
+  if (choice !== 'system') theme(choice);
+  await world.page.getByLabel('Theme').selectOption(choice);
+}
+
+When('I choose the {word} theme', async function (this: ForestWorld, choice: string) {
+  await choose(this, choice);
+});
+
+Given('I chose the {word} theme on the page at {string}', async function (this: ForestWorld, choice: string, path: string) {
+  const response = await this.page.goto(path);
+  assert.equal(response?.status(), 200);
+  await choose(this, choice);
+});
+
+When('I reload the page', async function (this: ForestWorld) {
+  const response = await this.page.reload();
+  assert.equal(response?.status(), 200);
 });
