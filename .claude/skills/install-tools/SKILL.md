@@ -38,6 +38,12 @@ These install outside the repository, or at whatever version is current that day
 | `pipx install <pkg>` | `mise use pipx:<pkg>@<version>` |
 | `curl … \| sh` or any download piped to a shell | `mise use github:<owner>/<repo>@<version>` for the release binary |
 
+### The hook
+
+A Claude Code hook enforces this table: `.claude/hooks/block-global-installs.ts`, registered for every shell command in `.claude/settings.json`. Before a command runs, it splits it into its commands, outside quotes, and refuses one that runs `npm install -g` (or `npm i -g`, `npm add --global`), `bun add -g`, `bun install -g`, `mise use -g`, `brew install`, `pipx install`, `npx`, `bunx` (or `bun x`), or a `curl` or `wget` download piped to a shell. The command does not run; you receive a message naming it and pointing here, so redo it with its pinned equivalent.
+
+It lets `mise install`, `mise use` without `-g`, `mise exec`, mise tasks, and `bun add` or `bun install` in the workspace through. A blocked pattern only quoted, as in a `grep` search or a commit message, is text, not a command, and passes. It checks commands Claude Code runs, not the ones a developer types. Its tests run with `bun run test:scripts`.
+
 ## After a change
 
 Check that a fresh clone still installs: run `mise install` and `bun install --frozen-lockfile` from the repository root. Done when both succeed with no change to `mise.toml` or `bun.lock`.
