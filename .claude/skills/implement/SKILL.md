@@ -54,7 +54,7 @@ With `--unattended`, follow [unattended.md](../../unattended.md) through every s
 Take slices in the order of the tasks' `#`, starting at the slice of the first task not `Done`; inside that slice, skip tasks already `Done`. A rerun after an interruption resumes there, with the existing branch and commits. For each slice:
 
 1. Set the slice's tasks to `Doing`: update only the `Status` property of each task entry. The cards move on the story's board.
-2. Do the tasks. For application code (`apps/`), follow the [tdd](../tdd/SKILL.md) skill. For skills, docs and tooling, verify with the repository checks that apply: `bun run lint:story` on changed Markdown, `bun run knip`, and the existing tests of what you touched (`apps/api`: `bun run test`, `bun run lint`; `apps/front`: `bun run lint`, `bun run build`).
+2. Do the tasks. Before writing code that uses a library's API, run the [library-docs](../library-docs/SKILL.md) skill for that library. For application code (`apps/`), follow the [tdd](../tdd/SKILL.md) skill. For skills, docs and tooling, verify with the repository checks that apply: `bun run lint:story` on changed Markdown, `bun run knip`, and the existing tests of what you touched (`apps/api`: `bun run test`, `bun run lint`; `apps/front`: `bun run lint`, `bun run build`).
 
    For a slice of a Gherkin story, work in this order, before any other code of the slice:
 
