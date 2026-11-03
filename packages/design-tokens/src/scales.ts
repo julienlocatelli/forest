@@ -19,7 +19,8 @@ export const typography = {
   label: { fontSize: 14, lineHeight: 20, fontWeight: 500 },
   title: { fontSize: 20, lineHeight: 28, fontWeight: 600 },
   headline: { fontSize: 28, lineHeight: 36, fontWeight: 700 },
-};
+  // `as const` keeps each weight a literal, the only numbers React Native's fontWeight accepts.
+} as const;
 
 export const radius = {
   none: 0,

@@ -1,6 +1,6 @@
 import { borderWidth, type ColorName, radius, shadows, spacing, typography } from '@forest/design-tokens';
-import type { Ref } from 'react';
-import { Pressable, type PressableProps, Text, type View } from 'react-native';
+import type { ComponentRef, Ref } from 'react';
+import { Pressable, type PressableProps, Text } from 'react-native';
 import { useTheme } from './ThemeProvider.tsx';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -8,7 +8,7 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   children: string;
   // `primary` for the main action, `secondary` for the others, `danger` for a destructive one.
   variant?: 'primary' | 'secondary' | 'danger';
-  ref?: Ref<View>;
+  ref?: Ref<ComponentRef<typeof Pressable>>;
 }
 
 const variants: Record<NonNullable<ButtonProps['variant']>, { background: ColorName; border: ColorName; text: ColorName }> = {

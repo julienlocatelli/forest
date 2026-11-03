@@ -28,3 +28,6 @@ apps/api/src/generated/prisma/
 
 # Storybook build output
 storybook-static/
+
+# Expo local state
+.expo/
