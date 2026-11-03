@@ -47,7 +47,7 @@ With `--unattended`, follow [unattended.md](../../unattended.md) through every s
 Follow [references/slicing.md](references/slicing.md):
 
 1. Split the story into vertical slices, each named as a user-visible outcome and tied to the acceptance criteria it proves. Order them so the first slice delivers the most value.
-2. List each slice's technical tasks, after reading the code they touch.
+2. List each slice's technical tasks, after reading the code they touch. For each library the story will use, check the API the tasks rely on with the [library-docs](../library-docs/SKILL.md) skill, so no task is planned against an API that changed.
 3. For a Gherkin story, find the steps that need a definition:
    1. Write the story's Gherkin block to `<scratchpad>/<n>.feature`, never to `features/`: planning changes no repository file.
    2. Run `bun run test:e2e:steps <scratchpad>/<n>.feature`. It starts no server and lists each step that no definition in `test-e2e/` matches, with the scenarios using it; it exits 1 when it lists any.
