@@ -35,6 +35,11 @@
         "steps/**/*.ts"
       ],
       "cucumber": false
+    },
+    "packages/ui-native": {
+      "ignoreDependencies": [
+        "@babel/runtime"
+      ]
     }
   },
   "ignore": [

@@ -45,6 +45,8 @@ jobs:
         run: bun run --cwd packages/ui test
       - name: Storybook build
         run: bun run --cwd packages/ui build-storybook
+      - name: Mobile components tests
+        run: bun run --cwd packages/ui-native test
       - name: Unused code (knip)
         run: bun run knip
       - name: Gherkin lint
