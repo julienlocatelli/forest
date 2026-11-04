@@ -2,11 +2,8 @@
 
 ## Library documentation
 
-Before writing or changing code that uses a library's API, such as NestJS, Next.js, Prisma or Neon, fetch that library's current documentation with `ctx7`, pinned in `mise.toml`. Your memory of a fast-moving API can be outdated; the fetched docs win.
+Before writing or changing code that uses a library's API, run the [library-docs](.claude/skills/library-docs/SKILL.md) skill: it fetches the documentation of the version Forest uses, with `ctx7`.
 
-```sh
-mise exec -- ctx7 library nestjs "guards"                              # find the library ID
-mise exec -- ctx7 docs /nestjs/docs.nestjs.com "guards canActivate"    # query its docs
-```
+## Tools and libraries
 
-It needs no account or API key. When `ctx7` fails or returns nothing useful, read the library's official documentation instead, and say in your answer which source you used.
+Before installing, adding or running a tool or a library, follow the [install-tools](.claude/skills/install-tools/SKILL.md) skill: tools are pinned in `mise.toml`, libraries in their workspace's `package.json`.

@@ -24,6 +24,13 @@
       "description": "A package keeps its peer dependency ranges: pinning them would conflict with every consumer on another version.",
       "matchDepTypes": ["peerDependencies"],
       "rangeStrategy": "widen"
+    },
+    {
+      "description": "@react-native/jest-preset 0.88 bundles babel-jest 29, the Jest 29 environment and Babel 7: the React Native workspaces keep those majors until the preset moves.",
+      "matchFileNames": ["packages/ui-native/package.json", "apps/mobile/package.json"],
+      "matchPackageNames": ["jest", "@types/jest", "@babel/core", "@babel/runtime"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }

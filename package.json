@@ -15,7 +15,7 @@
     "storybook": "bun run --cwd packages/ui storybook",
     "test:e2e": "bun run --cwd test-e2e test",
     "test:e2e:steps": "node test-e2e/steps.ts",
-    "test:scripts": "bun test ./.github/scripts"
+    "test:scripts": "bun test ./.github/scripts ./.claude/hooks"
   },
   "devDependencies": {
     "@types/node": "26.6.6",
