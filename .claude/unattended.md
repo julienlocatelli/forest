@@ -8,7 +8,7 @@ In an unattended run:
 
 - **Nobody answers.** Never call `AskUserQuestion` and never wait for an approval. Where a step would ask the user or show something for approval, take the option the step recommends and go on. When it recommends none, take the option that keeps everything as it is, or block.
 - **Log every choice.** For each choice the user would have made, append one line to the decision log, `$(git rev-parse --git-common-dir)/forest-unattended/TASK-<n>.md`, creating the folder when needed: `- <skill>, <step>: <choice>. <reason>.` The log lives in Git's own directory, so it is never committed, and only runs in the same clone share it; `/pull-request` copies it into the PR body.
-- **Stay reversible.** An action a step reserves for the user's explicit approval, such as dropping a `Doing` or `Done` task, a force-push or a deletion, is never taken: pick the option that keeps everything, or block.
+- **Stay reversible.** An action a step reserves for the user's explicit approval, such as dropping a `Doing` or `Done` task, a force-push or a deletion, is never taken: pick the option that keeps everything, or block. One force push is allowed: `/merge-story` pushing the story's own branch with `--force-with-lease` after rebasing it onto `main`, as its [Rebase onto main](skills/merge-story/SKILL.md#rebase-onto-main) says. Every other force push still needs the user's approval.
 
 ## Blocked
 
