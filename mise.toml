@@ -6,8 +6,37 @@ node = "26.13.0"
 "npm:@nestjs/cli" = "12.0.11"
 "npm:ctx7" = "0.9.0"
 "npm:neon" = "8.17.1"
+"npm:release-please" = "17.11.2"
 
 [tasks.clean-branches]
 description = "Delete local branches whose pull request into main is merged"
 # Tasks run from the repository root, so this works from anywhere in the clone.
 run = "bun .github/scripts/clean-branches.ts"
+
+[tasks.versions]
+description = "Preview the next version of each package and the commits behind it, changing nothing"
+# release-please reads release-please-config.json and .release-please-manifest.json from main on
+# GitHub, like the Release workflow, so it previews what main would release: push and merge first.
+# --dry-run opens, tags and writes nothing. The token is only read from the signed-in gh.
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+if ! token="$(gh auth token 2>/dev/null)" || [ -z "$token" ]; then
+  echo "No GitHub token: sign in with 'mise exec -- gh auth login', then run 'mise run versions' again." >&2
+  exit 1
+fi
+output="$(release-please release-pr --dry-run --token "$token" \
+  --repo-url julienlocatelli/forest --target-branch main \
+  --config-file release-please-config.json --manifest-file .release-please-manifest.json 2>&1)" || {
+  echo "$output" >&2
+  exit 1
+}
+if grep -q '^Would open 0 pull requests' <<<"$output"; then
+  echo "No package changes: no feat, fix or breaking change since the last release."
+  exit 0
+fi
+# The release pull request's body lists each bumped package, its next version and its commits;
+# its robot header, separators and footer are left out.
+sed -n '/^body:/,/^updates:/p' <<<"$output" | sed '1d;$d' |
+  grep -vE '^(---|This PR was generated with)' | cat -s
+'''
