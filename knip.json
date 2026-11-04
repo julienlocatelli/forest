@@ -41,6 +41,11 @@
       "ignoreDependencies": [
         "@babel/runtime"
       ]
+    },
+    "apps/mobile": {
+      "ignoreDependencies": [
+        "@babel/core"
+      ]
     }
   },
   "ignore": [

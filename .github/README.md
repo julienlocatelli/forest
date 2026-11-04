@@ -2,7 +2,7 @@
 
 ## PR checks
 
-`workflows/pr-checks.yml` runs the repository checks on every pull request into `main`: when it is opened, pushed to, reopened or marked ready for review. A new push cancels the run still going on the same pull request. The job needs no secret and touches no database, so end-to-end scenarios stay local.
+`workflows/pr-checks.yml` runs the repository checks on every pull request into `main`: when it is opened, pushed to, reopened or marked ready for review. A new push cancels the run still going on the same pull request. The job needs no secret and touches no database, so end-to-end scenarios stay local. It builds no native iOS or Android binary: the mobile app is type-checked, linted and unit-tested.
 
 Each check is its own step, named in the run:
 
@@ -16,7 +16,11 @@ Each check is its own step, named in the run:
 | Design tokens tests | `bun run --cwd packages/design-tokens test` |
 | Web components tests | `bun run --cwd packages/ui test` |
 | Storybook build | `bun run --cwd packages/ui build-storybook` |
+| Mobile components type-check | `bun run --cwd packages/ui-native typecheck` |
 | Mobile components tests | `bun run --cwd packages/ui-native test` |
+| Mobile app type-check | `bun run --cwd apps/mobile typecheck` |
+| Mobile app lint | `bun run --cwd apps/mobile lint` |
+| Mobile app tests | `bun run --cwd apps/mobile test` |
 | Unused code (knip) | `bun run knip` |
 | Gherkin lint | `bun run lint:gherkin` |
 | Script tests | `bun run test:scripts` |

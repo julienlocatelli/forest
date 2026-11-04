@@ -1,7 +1,7 @@
 import { radius, spacing, themes } from '@forest/design-tokens';
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { createRef } from 'react';
-import type { View } from 'react-native';
+import { type ComponentRef, createRef } from 'react';
+import type { Pressable } from 'react-native';
 import { Button } from './Button.tsx';
 import { setPhoneColorScheme } from './test/phone.ts';
 import { renderThemed } from './test/render.tsx';
@@ -47,7 +47,7 @@ describe('Button', () => {
   });
 
   test('recolors the same mounted button when the phone setting changes', async () => {
-    const ref = createRef<View>();
+    const ref = createRef<ComponentRef<typeof Pressable>>();
     await renderThemed(<Button ref={ref}>Save</Button>);
     const mounted = ref.current;
     await act(() => setPhoneColorScheme('dark'));

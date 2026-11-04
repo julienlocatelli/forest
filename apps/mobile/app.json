@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Forest",
+    "slug": "forest",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "updates": {
+      "enabled": false
+    }
+  }
+}

@@ -3,9 +3,9 @@
 import type { ColorSchemeName } from 'react-native';
 
 // Jest only lets a mock factory read variables whose name starts with `mock`.
-const mockPhone = { scheme: 'light' as ColorSchemeName, listeners: new Set<() => void>() };
+const mockPhone = { scheme: 'light' as ColorSchemeName | null, listeners: new Set<() => void>() };
 
-export function setPhoneColorScheme(next: ColorSchemeName) {
+export function setPhoneColorScheme(next: ColorSchemeName | null) {
   mockPhone.scheme = next;
   for (const listener of mockPhone.listeners) listener();
 }
@@ -18,7 +18,10 @@ jest.mock('react-native/Libraries/Utilities/useColorScheme', () => {
       mockPhone.listeners.delete(listener);
     };
   };
-  return { __esModule: true, default: () => useSyncExternalStore(subscribe, () => mockPhone.scheme) };
+  function useColorScheme() {
+    return useSyncExternalStore(subscribe, () => mockPhone.scheme);
+  }
+  return { __esModule: true, default: useColorScheme };
 });
 
 beforeEach(() => {
