@@ -1,0 +1,54 @@
+name: Release
+
+# release-please reads the Conventional Commits merged into main since each package's last release.
+# It keeps one release pull request open with the bumped versions and changelogs, and once that pull
+# request is merged it tags each bumped package and publishes its GitHub Release.
+# The packages, the bump rules and the changelog sections are in release-please-config.json.
+on:
+  push:
+    branches: [main]
+
+# The RELEASE_TOKEN secret does every write: the default token would open a pull request that starts
+# no workflow, so the checks and the Claude review would never run on it.
+permissions:
+  contents: read
+
+# Runs one after the other, so two merges never edit the release pull request at the same time.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open or update the release pull request, or release
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # bun.lock records each workspace's version, which release-please does not update.
+      - name: Check out the release branch
+        if: steps.release.outputs.prs_created == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+      - if: steps.release.outputs.prs_created == 'true'
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+        with:
+          install_args: bun
+      - name: Update bun.lock to the bumped versions
+        if: steps.release.outputs.prs_created == 'true'
+        run: |
+          bun install --lockfile-only
+          if git diff --quiet bun.lock; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit --message 'chore: update bun.lock to the released versions' bun.lock
+          git push

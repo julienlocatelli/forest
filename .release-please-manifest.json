@@ -1,0 +1,7 @@
+{
+  "apps/api": "0.0.1",
+  "apps/front": "0.1.0",
+  "packages/ui": "0.1.0",
+  "packages/design-tokens": "0.1.0",
+  "packages/ui-native": "0.1.0"
+}
