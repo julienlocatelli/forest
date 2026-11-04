@@ -141,3 +141,56 @@ Done once by the repository owner, in a browser:
 1. Open <https://github.com/apps/renovate> and select **Install** (or **Configure** if it is already installed on the account).
 2. Choose **Only select repositories**, pick `forest`, and confirm.
 3. Renovate reads `renovate.json`, reports any configuration error in the Dependency Dashboard issue, and opens its first pull requests within about an hour.
+
+## Releases
+
+`workflows/release.yml` runs [release-please](https://github.com/googleapis/release-please) on every push to `main`. It reads the Conventional Commits merged since each package's last release and keeps one release pull request open, from the `release-please--branches--main` branch. Its configuration is `release-please-config.json`, and `.release-please-manifest.json` holds each package's last released version.
+
+### Released packages
+
+| Package | Folder | Tag |
+| --- | --- | --- |
+| `api` | `apps/api` | `api-v<version>` |
+| `front` | `apps/front` | `front-v<version>` |
+| `ui` | `packages/ui` | `ui-v<version>` |
+| `design-tokens` | `packages/design-tokens` | `design-tokens-v<version>` |
+| `ui-native` | `packages/ui-native` | `ui-native-v<version>` |
+
+Each one is released on its own. A commit counts for a package only when it changes a file in that package's folder; a commit that changes no package, like most skill or workflow changes, releases nothing. `apps/mobile` and `test-e2e` are not released. History before `bootstrap-sha` in the configuration bumps nothing: each package started from the version its `package.json` held then.
+
+### Bump rules
+
+| Commit | Bump |
+| --- | --- |
+| `feat` | Minor: `0.1.0` → `0.2.0` |
+| `fix` | Patch: `0.1.0` → `0.1.1` |
+| A breaking change, `!` after the type or a `BREAKING CHANGE:` footer, whatever the type | Major, also from `0.x`: `0.1.0` → `1.0.0` |
+| Any other type: `chore`, `docs`, `refactor`, `test`, `ci`, `perf`… | None |
+
+### Changelogs
+
+Each package has a `CHANGELOG.md` in its folder, with one section per version, newest first. A section lists the breaking changes, then the `feat` and `fix` commits under **Features** and **Bug Fixes**, each linking to its commit. Other types are left out: release-please releases every type it shows in a changelog, so showing `chore` or `docs` would make them bump a patch version.
+
+### The release pull request
+
+The pull request bumps the `version` of each bumped package's `package.json`, adds its changelog section, updates `.release-please-manifest.json`, and lists each bumped package with its new version and changelog section in its description. Internal `workspace:*` ranges stay as they are. Each merge into `main` that bumps a package updates it; a merge that bumps nothing leaves it as it is.
+
+`bun.lock` records each workspace's version too, and release-please does not update it. The workflow then checks out the release branch, runs `bun install --lockfile-only` and pushes `bun.lock` when it changed, so a later `bun install` changes nothing.
+
+The release pull request is never a story: `/merge-story`, `/dev-loop` and the update-check skill never take it, and the story-done workflow skips its branch. The PR checks and the Claude review run on it as on any pull request; the review skips its spec axis, since the branch has no TASK number.
+
+### Release
+
+Merge the release pull request once its checks pass. The next workflow run creates one tag per bumped package, such as `front-v0.2.0`, and one GitHub Release per tag whose notes are that version's changelog section. It opens no new release pull request until a later commit bumps a package again.
+
+GitHub sometimes answers a release creation with a server error. The run then fails, and the merged release pull request keeps its `autorelease: pending` label. Re-run the failed job (`gh run rerun <run id>`): release-please skips the releases already created, creates the missing ones, and moves the pull request to `autorelease: tagged`. A re-run that finds every release already created still fails, with `already_exists`, but only after updating the label, so the next push to `main` runs normally.
+
+### Set up the release token
+
+A pull request opened with the workflow's own `GITHUB_TOKEN` starts no workflow, so neither the checks nor the review would run on the release pull request. The workflow uses a fine-grained personal access token instead, and `main`'s protection gets no exception.
+
+1. In GitHub, open your avatar → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+2. Set **Resource owner** to the repository's owner, **Repository access** to **Only select repositories** with `forest`, and under **Repository permissions** give **Contents** and **Pull requests** *Read and write*. Pick an expiration; create a new token before it expires.
+3. Add it as a repository secret named `RELEASE_TOKEN` (**Settings → Secrets and variables → Actions**), or run `gh secret set RELEASE_TOKEN`.
+
+The token lives only in that secret: never write it in the repository.

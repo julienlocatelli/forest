@@ -86,6 +86,16 @@ describe('storyDone', () => {
     });
   });
 
+  test('skips the release pull request branch and succeeds', async () => {
+    const { calls, fetcher } = fakeNotion([]);
+
+    const outcome = await storyDone('release-please--branches--main', 'token', fetcher);
+
+    expect(calls).toEqual([]);
+    expect(outcome.ok).toBe(true);
+    expect(outcome.summary).toStartWith('Skipped: branch "release-please--branches--main" has no TASK number');
+  });
+
   test('fails when no story has the TASK number', async () => {
     const { calls, fetcher } = fakeNotion([]);
 
