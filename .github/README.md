@@ -179,6 +179,18 @@ The pull request bumps the `version` of each bumped package's `package.json`, ad
 
 The release pull request is never a story: `/merge-story`, `/dev-loop` and the update-check skill never take it, and the story-done workflow skips its branch. The PR checks and the Claude review run on it as on any pull request; the review skips its spec axis, since the branch has no TASK number.
 
+### Preview the next versions
+
+```sh
+mise run versions
+```
+
+It prints what the release pull request would hold if the workflow ran now: each package that would be bumped, its next version and the `feat`, `fix` and breaking commits behind it. When nothing would be bumped, it says `No package changes`. It runs the pinned release-please command-line tool with `--dry-run`, so it opens no pull request and writes no file, branch, tag or GitHub Release.
+
+release-please reads the commits, the configuration and the manifest from `main` on GitHub, like the workflow. The preview shows what `main` would release, not your local branch: to see your change, merge it first.
+
+It needs a GitHub token, even for a dry run, and takes it from the signed-in `gh`. When there is none, it stops and asks you to run `mise exec -- gh auth login`.
+
 ### Release
 
 Merge the release pull request once its checks pass. The next workflow run creates one tag per bumped package, such as `front-v0.2.0`, and one GitHub Release per tag whose notes are that version's changelog section. It opens no new release pull request until a later commit bumps a package again.
