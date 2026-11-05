@@ -47,7 +47,7 @@
     "@types/pg": "8.23.1",
     "@types/supertest": "7.2.1",
     "@vitest/coverage-v8": "5.1.0",
-    "oxlint": "1.90.0",
+    "oxlint": "1.91.0",
     "oxlint-tsgolint": "7.0.2005",
     "prettier": "3.9.10",
     "prisma": "7.10.1",
