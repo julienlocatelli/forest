@@ -126,7 +126,7 @@ When the current branch is to be deleted, it first switches to `main` and pulls 
 
 ## Dependency updates
 
-[Renovate](https://docs.renovatebot.com/) opens a pull request whenever a dependency has a newer version. It runs as the hosted Mend Renovate GitHub App, and its configuration is `renovate.json` at the repository root. It updates:
+[Renovate](https://docs.renovatebot.com/) opens a pull request when a dependency has a newer version, once a week: it creates and updates its pull requests only on Mondays, Paris time (`schedule` and `timezone`). The whole day is allowed, since the hosted app only checks the repository every few hours. Security fixes ignore the schedule and open at once. It runs as the hosted Mend Renovate GitHub App, and its configuration is `renovate.json` at the repository root. It updates:
 
 - the bun packages of every workspace (root, `apps/api`, `apps/front`, `test-e2e`), with `bun.lock` updated in the same pull request;
 - the tools pinned in `mise.toml`;
