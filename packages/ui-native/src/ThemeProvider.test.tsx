@@ -1,5 +1,6 @@
 import { themes } from '@forest/design-tokens';
 import { act, render, screen } from '@testing-library/react-native';
+import { useEffect } from 'react';
 import { Text } from 'react-native';
 import { setPhoneColorScheme } from './test/phone.ts';
 import { ThemeProvider, useTheme } from './ThemeProvider.tsx';
@@ -11,7 +12,10 @@ function Probe() {
 
 let choose: ((preference: 'system' | keyof typeof themes) => void) | undefined;
 function Chooser() {
-  choose = useTheme().setPreference;
+  const { setPreference } = useTheme();
+  useEffect(() => {
+    choose = setPreference;
+  }, [setPreference]);
   return null;
 }
 
