@@ -2,9 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types.js';
-const { AppModule } = await import(
+const { AppModule } = (await import(
   new URL('../dist/app.module.js', import.meta.url).href
-);
+)) as typeof import('../src/app.module.js');
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;

@@ -32,7 +32,7 @@ export function positiveInteger(
   fallback: number,
 ): number {
   if (env[key] === undefined) return fallback;
-  const value = env[key]!;
+  const value = env[key];
   if (
     !/^\d+$/.test(value) ||
     !Number.isSafeInteger(Number(value)) ||

@@ -6,6 +6,9 @@
     "packages/*",
     "test-e2e"
   ],
+  "catalog": {
+    "eslint": "9.39.5"
+  },
   "scripts": {
     "dev": "bun run --parallel --filter '*' dev",
     "knip": "knip",

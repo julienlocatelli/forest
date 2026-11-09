@@ -36,7 +36,7 @@ describe('Prisma migration', () => {
     let id: number | undefined;
     try {
       id = (
-        await pool.query(
+        await pool.query<{ id: number }>(
           'INSERT INTO public."user" ("firstName","lastName") VALUES ($1,$2) RETURNING id',
           ['Repeat', 'Test'],
         )
@@ -45,7 +45,7 @@ describe('Prisma migration', () => {
       expect(await runMigration('show')).toBe(0);
       expect(
         (
-          await pool.query(
+          await pool.query<{ firstName: string }>(
             'SELECT "firstName" FROM public."user" WHERE id=$1',
             [id],
           )

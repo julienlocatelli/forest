@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import type { App } from 'supertest/types.js';
 import { AuthModule } from './auth.module.js';
 import { AuthConfig } from './auth.config.js';
 import { PrismaService } from '../database/prisma.service.js';
@@ -10,7 +11,7 @@ import { AuthRateLimit, AuthRateLimitError } from './auth.rate-limit.js';
 import { tokenPair } from './auth.tokens.js';
 import { AuthAudit } from './auth.audit.js';
 describe('HTTP authentication security controls', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
   const limits = { check: vi.fn(), refresh: vi.fn() };
   const auth = {
     login: vi.fn(),
@@ -32,7 +33,9 @@ describe('HTTP authentication security controls', () => {
       .overrideProvider(AuthAudit)
       .useValue(audit)
       .compile();
-    app = module.createNestApplication({ logger: false });
+    app = module.createNestApplication<INestApplication<App>>({
+      logger: false,
+    });
     await app.init();
   });
   afterAll(async () => {

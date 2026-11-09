@@ -2,23 +2,24 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
+import type { App } from 'supertest/types.js';
 import { vi } from 'vitest';
 import { digest } from '../src/auth/auth.tokens.js';
-const { AppModule } = await import(
+const { AppModule } = (await import(
   new URL('../dist/app.module.js', import.meta.url).href
-);
-const { PrismaService } = await import(
+)) as typeof import('../src/app.module.js');
+const { PrismaService } = (await import(
   new URL('../dist/database/prisma.service.js', import.meta.url).href
-);
-const { AuthService } = await import(
+)) as typeof import('../src/database/prisma.service.js');
+const { AuthService } = (await import(
   new URL('../dist/auth/auth.service.js', import.meta.url).href
-);
-const { AuthRateLimit } = await import(
+)) as typeof import('../src/auth/auth.service.js');
+const { AuthRateLimit } = (await import(
   new URL('../dist/auth/auth.rate-limit.js', import.meta.url).href
-);
-const { AuthConfig } = await import(
+)) as typeof import('../src/auth/auth.rate-limit.js');
+const { AuthConfig } = (await import(
   new URL('../dist/auth/auth.config.js', import.meta.url).href
-);
+)) as typeof import('../src/auth/auth.config.js');
 
 describe('local authentication persistence and transactions', () => {
   const email = `auth-${randomUUID()}@example.com`;
@@ -32,7 +33,7 @@ describe('local authentication persistence and transactions', () => {
     '127.0.0.1',
     '::1',
   ]);
-  let app: INestApplication;
+  let app: INestApplication<App>;
   let prisma: InstanceType<typeof PrismaService>;
   let id: number;
   async function open(selected = config) {
@@ -40,7 +41,9 @@ describe('local authentication persistence and transactions', () => {
       .overrideProvider(AuthConfig)
       .useValue(selected)
       .compile();
-    const instance = module.createNestApplication({ logger: false });
+    const instance = module.createNestApplication<INestApplication<App>>({
+      logger: false,
+    });
     try {
       await instance.init();
       return instance;
@@ -164,7 +167,10 @@ describe('local authentication persistence and transactions', () => {
       expect(spy.mock.calls.flat().join(' ')).not.toContain(password);
       expect(spy.mock.calls.flat().join(' ')).not.toContain(email);
       expect(
-        spy.mock.calls.map(([entry]) => JSON.parse(String(entry)).outcome),
+        spy.mock.calls.map(
+          ([entry]) =>
+            (JSON.parse(String(entry)) as { outcome: string }).outcome,
+        ),
       ).toEqual(['unknown_identity', 'wrong_password', 'inactive_user']);
     } finally {
       spy.mockRestore();
