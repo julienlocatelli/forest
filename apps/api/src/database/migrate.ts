@@ -66,7 +66,7 @@ async function assertDestination(
   try {
     const {
       rows: [objects],
-    } = await pool.query(
+    } = await pool.query<{ users: string | null; history: string | null }>(
       `SELECT to_regclass('public."user"') AS users, to_regclass('public._prisma_migrations') AS history`,
     );
     if (objects.users && !objects.history)
@@ -74,7 +74,7 @@ async function assertDestination(
     if (objects.history) {
       const {
         rows: [history],
-      } = await pool.query(
+      } = await pool.query<{ count: number }>(
         'SELECT count(*)::int AS count FROM public._prisma_migrations',
       );
       if (objects.users && history.count === 0)

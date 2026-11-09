@@ -15,24 +15,29 @@ describe('database authorization', () => {
               'SELECT rolsuper, rolcreaterole, rolbypassrls FROM pg_roles WHERE rolname=current_user',
             )
           ).rows[0],
-        ).toEqual({ rolsuper: false, rolcreaterole: false, rolbypassrls: false });
+        ).toEqual({
+          rolsuper: false,
+          rolcreaterole: false,
+          rolbypassrls: false,
+        });
       }
       expect(
         (
-          await app.query(
+          await app.query<{ allowed: boolean }>(
             "SELECT has_schema_privilege(current_user, 'public', 'CREATE') AS allowed",
           )
         ).rows[0].allowed,
       ).toBe(false);
       expect(
         (
-          await migration.query(
+          await migration.query<{ relrowsecurity: boolean }>(
             'SELECT relrowsecurity FROM pg_class WHERE oid=\'public."user"\'::regclass',
           )
         ).rows[0].relrowsecurity,
       ).toBe(true);
-      const runtime = (await app.query('SELECT current_user AS name')).rows[0]
-        .name as string;
+      const runtime = (
+        await app.query<{ name: string }>('SELECT current_user AS name')
+      ).rows[0].name;
       const tables = [
         'public."user"',
         'public._prisma_migrations',
@@ -42,7 +47,7 @@ describe('database authorization', () => {
         'public.auth_attempt',
       ];
       for (const table of tables) {
-        const grants = await migration.query(
+        const grants = await migration.query<{ count: number }>(
           "SELECT count(*)::int AS count FROM pg_class c CROSS JOIN LATERAL aclexplode(COALESCE(c.relacl,acldefault('r',c.relowner))) a WHERE c.oid=$1::regclass AND a.grantee=0",
           [table],
         );
@@ -63,20 +68,20 @@ describe('database authorization', () => {
       }
       expect(
         (
-          await migration.query(
+          await migration.query<{ count: number }>(
             "SELECT count(*)::int AS count FROM aclexplode((SELECT COALESCE(relacl,acldefault('S',relowner)) FROM pg_class WHERE oid='public.user_id_seq'::regclass)) WHERE grantee=0",
           )
         ).rows[0].count,
       ).toBe(0);
       expect(
         (
-          await app.query(
+          await app.query<{ allowed: boolean }>(
             "SELECT has_table_privilege(current_user,'public._prisma_migrations','SELECT') AS allowed",
           )
         ).rows[0].allowed,
       ).toBe(false);
       const row = (
-        await app.query(
+        await app.query<{ id: number }>(
           'INSERT INTO public."user" ("firstName","lastName") VALUES ($1,$2) RETURNING id',
           ['Permission', 'Test'],
         )
@@ -87,9 +92,10 @@ describe('database authorization', () => {
       ]);
       expect(
         (
-          await app.query('SELECT "isActive" FROM public."user" WHERE id=$1', [
-            id,
-          ])
+          await app.query<{ isActive: boolean }>(
+            'SELECT "isActive" FROM public."user" WHERE id=$1',
+            [id],
+          )
         ).rows[0].isActive,
       ).toBe(false);
       for (const table of [
@@ -100,7 +106,7 @@ describe('database authorization', () => {
       ]) {
         expect(
           (
-            await migration.query(
+            await migration.query<{ relrowsecurity: boolean }>(
               'SELECT relrowsecurity FROM pg_class WHERE oid=$1::regclass',
               [`public.${table}`],
             )
