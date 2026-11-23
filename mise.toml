@@ -1,6 +1,6 @@
 [tools]
 actionlint = "1.7.12"
-bun = "1.4.4"
+bun = "1.4.5"
 gh = "2.103.3"
 node = "26.13.0"
 "npm:@nestjs/cli" = "12.0.13"
